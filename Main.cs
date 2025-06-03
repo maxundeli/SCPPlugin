@@ -477,7 +477,7 @@ public class Plugin : Plugin<Config>
 
     private IEnumerator<float> LightsCoroutine()
     {
-        int delay = Random.Range(Config.BlackoutIntervalMin, Config.BlackoutIntervalMax);
+        int delay = Random.Range(60, 90);
         Log.Info("Задержка " + delay + " секунд");
         yield return Timing.WaitForSeconds(delay);
         Log.Info("запуск цикла");
