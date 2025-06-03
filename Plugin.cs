@@ -24,73 +24,12 @@ using Warhead = Exiled.API.Features.Warhead;
 
 namespace MaxunPlugin;
 
-public class OllamaChunk
-{
-    // Поля, которые Ollama может присылать в каждом chunk’е
-    [JsonProperty("model")] public string Model { get; set; }
-
-    [JsonProperty("created_at")] public string CreatedAt { get; set; }
-
-    [JsonProperty("response")] public string Response { get; set; }
-
-    [JsonProperty("done")] public bool Done { get; set; }
-
-    [JsonProperty("done_reason")] public string DoneReason { get; set; }
-
-    // Можешь добавить остальные поля: context, total_duration и т.д. если надо парсить
-    // [JsonProperty("context")]
-    // public int[] Context { get; set; }
-    // ...
-}
-
-public class OllamaClient
-{
-    private readonly HttpClient _httpClient;
-
-    public OllamaClient(string baseAddress = "http://192.168.1.182:11411")
-    {
-        _httpClient = new HttpClient { BaseAddress = new Uri(baseAddress) };
-        _httpClient.Timeout = TimeSpan.FromSeconds(120);
-    }
-    
-
-    
-    public async Task<string> SendRequestAsync(string prompt, string model = "gemma3:12b", int num_predict=30)
-    {
-        try
-        {
-            // Генерим свой объект
-            var requestData = new { prompt, model, num_predict };
-
-            // Сериализация через Newtonsoft
-            string jsonRequest = JsonConvert.SerializeObject(requestData);
-
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            using var response = await _httpClient.PostAsync("/api/generate", content);
-            response.EnsureSuccessStatusCode();
-
-            string? responseContent = await response.Content.ReadAsStringAsync();
-            return responseContent;
-        }
-        catch (Exception e)
-        {
-            Log.Error($"SendRequestAsync упал с ошибкой: {e}");
-            return $"Error: {e}";
-        }
-    }
-}
-
-
-
 public class Plugin : Plugin<Config>
 {
     private List<string> phrases = new List<string> { };
     private string OllamaRespone = null;
     public static Plugin Instance;
-    private readonly Dictionary<string, PlayerLifeStats> _playerLifeStats = new();
-
-    private readonly Dictionary<string, PlayerStats> _playerStats = new();
+    private StatsService _statsService;
     private MyDatabaseHelper _dbHelper;
     private CoroutineHandle _DeadManCoroutine;
     private int _generatorCount;
@@ -111,13 +50,14 @@ public class Plugin : Plugin<Config>
     {
         _dbHelper = new MyDatabaseHelper(Config.ConnectionString);
         Instance = this;
-        Player.Died += OnDie;
-        Player.Hurt += PlayerHurt;
+        _statsService = new StatsService(_dbHelper);
+        Player.Died += _statsService.OnPlayerDied;
+        Player.Hurt += _statsService.OnPlayerHurt;
         _dbHelper.TestConnectionAsync();
         Server.RespawnedTeam += OnTeamRespawned;
         Server.RoundStarted += OnRoundStarted;
-        Player.Joined += OnJoined;
-        Server.RoundEnded += OnRoundEnd;
+        Player.Joined += _statsService.OnPlayerJoined;
+        Server.RoundEnded += _statsService.OnRoundEnd;
         Server.RestartingRound += OnRoundRestart;
         Scp096.AddingTarget += RageStart;
         Exiled.Events.Handlers.Warhead.DeadmanSwitchInitiating += DeadmanS;
@@ -131,12 +71,12 @@ public class Plugin : Plugin<Config>
 
     public override void OnDisabled()
     {
-        Player.Died -= OnDie;
-        Player.Hurt -= PlayerHurt;
+        Player.Died -= _statsService.OnPlayerDied;
+        Player.Hurt -= _statsService.OnPlayerHurt;
         Server.RoundStarted -= OnRoundStarted;
-        Player.Joined -= OnJoined;
+        Player.Joined -= _statsService.OnPlayerJoined;
         Exiled.Events.Handlers.Warhead.DeadmanSwitchInitiating -= DeadmanS;
-        Server.RoundEnded -= OnRoundEnd;
+        Server.RoundEnded -= _statsService.OnRoundEnd;
         Server.RestartingRound -= OnRoundRestart;
         Server.RespawnedTeam -= OnTeamRespawned;
         Scp096.AddingTarget -= RageStart;
@@ -159,102 +99,10 @@ public class Plugin : Plugin<Config>
     {
         if (ev.Pickup.Category == ItemCategory.SCPItem)
         {
-            int playerID = ev.Player.Id;
-            string playerIDstr = playerID.ToString();
-            _playerStats[playerIDstr].takedSCPObjects++;
+            _statsService.RegisterScpItem(ev.Player.Id);
         }
     }
 
-    private void OnDie(DiedEventArgs ev)
-    {
-        int playerId = ev.Player.Id;
-        string playerIdSt = Convert.ToString(playerId);
-        ev.Player.Broadcast(7,
-            "За эту жизнь убито: " + "<color=red>" + _playerLifeStats[playerIdSt].KillsLife + "</color>" +
-            ", нанесено урона: " + "<color=red>" + _playerLifeStats[playerIdSt].DamageDealedLife + "</color>");
-        _playerLifeStats[playerIdSt].KillsLife = 0;
-        _playerLifeStats[playerIdSt].DamageDealedLife = 0;
-        int attackerId = ev.Attacker.Id;
-
-        string attackerIdSt = Convert.ToString(attackerId);
-        if (playerId != attackerId)
-        {
-            _playerStats[attackerIdSt].Kills++;
-            _playerLifeStats[attackerIdSt].KillsLife++;
-        }
-
-        if (ev.Player.PreviousRole == RoleTypeId.Scp049 || ev.Player.PreviousRole == RoleTypeId.Scp079 ||
-            ev.Player.PreviousRole == RoleTypeId.Scp096 || ev.Player.PreviousRole == RoleTypeId.Scp106 ||
-            ev.Player.PreviousRole == RoleTypeId.Scp173 ||
-            ev.Player.PreviousRole == RoleTypeId.Scp939) _playerStats[attackerIdSt].SCPsKilled++;
-
-
-        if ((ev.Attacker.Role.Side == Side.ChaosInsurgency && (ev.Player.PreviousRole == RoleTypeId.ChaosConscript ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ChaosMarauder ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ChaosRepressor ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ChaosRifleman ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ClassD)) ||
-            (ev.Attacker.Role.Side == Side.Mtf &&
-             (ev.Player.PreviousRole == RoleTypeId.NtfCaptain || ev.Player.PreviousRole == RoleTypeId.NtfPrivate ||
-              ev.Player.PreviousRole == RoleTypeId.NtfSergeant || ev.Player.PreviousRole == RoleTypeId.NtfSpecialist ||
-              ev.Player.PreviousRole == RoleTypeId.Scientist || ev.Player.PreviousRole == RoleTypeId.FacilityGuard)))
-        {
-            if (_playerStats[attackerIdSt].FFkills == -50)
-            {
-                _playerStats[attackerIdSt].FFkillsCount++;
-                foreach (var player in Exiled.API.Features.Player.List)
-                    player.Broadcast(10,
-                        "<color=blue>" + ev.Attacker.Nickname + "</color>" + "<color=white> - </color>" +
-                        "<color=red>ДОЛБАЕБ</color><color=white>, и убил уже " + "<color=red>" +
-                        _playerStats[attackerIdSt].FFkillsCount + "</color>" + "<color=white> союзников</color>",
-                        Broadcast.BroadcastFlags.Normal, true);
-            }
-            else
-            {
-                _playerStats[attackerIdSt].FFkills++;
-                _playerStats[attackerIdSt].FFkillsCount++;
-            }
-        }
-
-
-        if (_playerStats[attackerIdSt].FFkills >= 3)
-        {
-            _playerStats[attackerIdSt].FFkills = -50;
-            foreach (var player in Exiled.API.Features.Player.List)
-                player.Broadcast(10,
-                    "<color=blue>" + ev.Attacker.Nickname + "</color>" + "<color=white> - </color>" +
-                    "<color=red>ДОЛБАЕБ</color><color=white>, и убил уже " + "<color=red>" +
-                    _playerStats[attackerIdSt].FFkillsCount + "</color>" + "<color=white> союзников</color>",
-                    Broadcast.BroadcastFlags.Normal, true);
-        }
-    }
-
-    private void PlayerHurt(HurtEventArgs ev)
-    {
-        float damageDealed = ev.Amount;
-        int damageDealedInt = Convert.ToInt32(damageDealed);
-        int playerid = ev.Attacker.Id;
-        string playerIdSt = Convert.ToString(playerid);
-        if (ev.Attacker.Id != ev.Player.Id)
-        {
-            _playerStats[playerIdSt].DamageDealed = damageDealedInt + _playerStats[playerIdSt].DamageDealed;
-            _playerLifeStats[playerIdSt].DamageDealedLife =
-                damageDealedInt + _playerLifeStats[playerIdSt].DamageDealedLife;
-        }
-    }
-
-    private void OnJoined(JoinedEventArgs ev)
-    {
-        string id = Convert.ToString(ev.Player.UserId);
-        string nickname = ev.Player.Nickname;
-        int nonId = ev.Player.Id;
-        Log.Warn(id + nickname + nonId);
-        //dbHelper.CreateRow(id, nickname);
-        int playerId = ev.Player.Id;
-        string playerIdSt = Convert.ToString(playerId);
-        _playerStats[playerIdSt] = new PlayerStats { Kills = 0, DamageDealed = 0, FFkills = 0 };
-        _playerLifeStats[playerIdSt] = new PlayerLifeStats { KillsLife = 0, DamageDealedLife = 0 };
-    }
 
     private void OnRoundStarted()
     {
@@ -310,48 +158,7 @@ public class Plugin : Plugin<Config>
         Timing.KillCoroutines(_heavyLightsStage1Coroutine);
         Timing.KillCoroutines(_heavyLightsStage2Coroutine);
         Timing.KillCoroutines(_warheadCoroutine);
-        int MaxKills = 0;
-        string MaxKillsNickname = null;
-        string word = "убийств";
-        foreach (var player in Exiled.API.Features.Player.List)
-        {
-            int playerid = player.Id;
-            string playerIdSt = Convert.ToString(playerid);
-            if (_playerStats[playerIdSt].Kills - _playerStats[playerIdSt].FFkillsCount > MaxKills)
-            {
-                MaxKills = _playerStats[playerIdSt].Kills - _playerStats[playerIdSt].FFkillsCount;
-                MaxKillsNickname = player.Nickname;
-            };
-        }
-
-        if (MaxKills != 0)
-        {
-           word = CalculateRightWord(MaxKills);
-        }
-        else
-        {
-            MaxKillsNickname = "никто";
-        }
-        
-        foreach (var player in Exiled.API.Features.Player.List)
-        {
-            int playerid = player.Id;
-            string userId = player.UserId;
-            string playerIdSt = Convert.ToString(playerid);
-            int damageDealed = _playerStats[playerIdSt].DamageDealed;
-            int kills = _playerStats[playerIdSt].Kills;
-            int FFkillsCount = _playerStats[playerIdSt].FFkillsCount;
-            int takedSCPObjects = _playerStats[playerIdSt].takedSCPObjects;
-            int SCPsKilled = _playerStats[playerIdSt].SCPsKilled;
-            Log.Warn(userId + kills + damageDealed);
-            _dbHelper.UpdateStat(userId, kills, damageDealed, Round.ElapsedTime, FFkillsCount, takedSCPObjects,
-                SCPsKilled);
-            string elapsedTime = Round.ElapsedTime.ToString("mm':'ss");
-            player.Broadcast(7,
-                "Вы убили " + "<color=red>" + kills + "</color>" + " человек, из них союзников - " + "<color=red>" +
-                FFkillsCount + "</color>" + ". Всего нанесено урона: " +
-                "<color=red>" + damageDealed + "</color>\n" + "Самый результативный игрок - " + "<color=red>" + MaxKillsNickname + "</color>" + " с " + "<color=red>" + MaxKills + " </color>" + word );
-        }
+        _statsService.OnRoundEnd(ev);
     }
 
     private void OnRoundRestart()
@@ -442,17 +249,6 @@ public class Plugin : Plugin<Config>
         }
     }
 
-    public string CalculateRightWord(int number)
-    {
-        switch (number)
-        {
-           case 1: return "убийством";
-           case int n when n > 1:
-               return "убийствами";
-           default:
-               throw new Exception();
-        }
-    }
 
     private IEnumerator<float> HeavyLightsStage2Coroutine()
     {
@@ -650,22 +446,4 @@ public class Plugin : Plugin<Config>
         }
     }
 
-    public class PlayerStats
-    {
-        public int Kills { get; set; }
-        public int FFkills { get; set; }
-        public int FFkillsCount { get; set; }
-        public int takedSCPObjects { get; set; }
-        public int SCPsKilled { get; set; }
-        public int DamageDealed { get; set; }
-        // Можешь добавить другие свойства, как тебе нужно
-    }
-
-    public class PlayerLifeStats
-    {
-        public int KillsLife { get; set; }
-
-        public int DamageDealedLife { get; set; }
-        // Можешь добавить другие свойства, как тебе нужно
-    }
 }
