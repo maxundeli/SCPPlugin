@@ -6,14 +6,9 @@ public class MyDatabaseHelper
 {
     private readonly string connectionString;
 
-    public MyDatabaseHelper()
+    public MyDatabaseHelper(string connectionString)
     {
-        // Собери Connection String
-        connectionString = "Server=localhost;" +
-                           "Database=scp;" +
-                           "User ID=maxundeli;" +
-                           "Password=Maxx1826583ru;" +
-                           "Pooling=true;";
+        this.connectionString = connectionString;
     }
 
     public async Task TestConnectionAsync()

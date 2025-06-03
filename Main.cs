@@ -109,7 +109,7 @@ public class Plugin : Plugin<Config>
 
     public override void OnEnabled()
     {
-        _dbHelper = new MyDatabaseHelper();
+        _dbHelper = new MyDatabaseHelper(Config.ConnectionString);
         Instance = this;
         Player.Died += OnDie;
         Player.Hurt += PlayerHurt;
