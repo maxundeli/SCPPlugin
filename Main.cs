@@ -75,8 +75,8 @@ public class OllamaClient
         }
         catch (Exception e)
         {
-            Log.Error($"SendRequestAsync упал с ошибкой: {e}");
-            return $"Error: {e}";
+            Log.Error("SendRequestAsync упал с ошибкой: " + e);
+            return "Error: " + e;
         }
     }
 }
@@ -477,27 +477,28 @@ public class Plugin : Plugin<Config>
 
     private IEnumerator<float> LightsCoroutine()
     {
-        int delay = Random.Range(60, 90);
+        int delay = Random.Range(Config.BlackoutIntervalMin, Config.BlackoutIntervalMax);
         Log.Info("Задержка " + delay + " секунд");
         yield return Timing.WaitForSeconds(delay);
         Log.Info("запуск цикла");
         while (true)
         {
-            int lightOffTime = Random.Range(30, 90);
-            int lightOffChance = Random.Range(1, 4);
-            Log.Info("Попытка рандома: Выпало " + lightOffChance + " и " + lightOffTime);
+            int lightOffTime = Random.Range(Config.BlackoutDurationMin, Config.BlackoutDurationMax);
+            int chance = Random.Range(1, 101);
+            Log.Info("Попытка рандома: Выпало " + chance + " и " + lightOffTime);
 
-            if (lightOffChance == 3)
+            if (chance <= Config.BlackoutChance)
             {
                 Map.TurnOffAllLights(lightOffTime, ZoneType.Entrance);
 
                 Map.TurnOffAllLights(lightOffTime, ZoneType.LightContainment);
                 Map.TurnOffAllLights(lightOffTime, ZoneType.Surface);
 
-                Cassie.GlitchyMessage("Lights out for " + Convert.ToString(lightOffTime) + " seconds.", 0.4f, 0.2f);
+                Cassie.GlitchyMessage("Lights out for " + lightOffTime + " seconds.", 0.4f, 0.2f);
             }
 
-            yield return Timing.WaitForSeconds(150f);
+            int nextDelay = Random.Range(Config.BlackoutIntervalMin, Config.BlackoutIntervalMax);
+            yield return Timing.WaitForSeconds(nextDelay);
         }
     }
 
