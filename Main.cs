@@ -268,6 +268,13 @@ public class Plugin : Plugin<Config>
             int nonId = player.Id;
             Log.Warn(id + nickname + nonId);
             _dbHelper.CreateRow(id, nickname);
+
+            if ((player.Role == RoleTypeId.ClassD || player.Role == RoleTypeId.Scientist) &&
+                Random.Range(1, 101) <= Config.FlashlightChance)
+            {
+                player.AddItem(ItemType.Flashlight);
+            }
+
             if ((player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||
                  player.Role == RoleTypeId.Scp079 || player.Role == RoleTypeId.Scp096 ||
                  player.Role == RoleTypeId.Scp106 || player.Role == RoleTypeId.Scp173 ||
