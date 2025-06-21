@@ -28,5 +28,8 @@ namespace MaxunPlugin
 
         [Description("Chance of blackout occurring per check (0-100).")]
         public int BlackoutChance { get; set; } = 33;
+
+        [Description("Chance of giving a flashlight to D-Class or Scientist players at round start (0-100).")]
+        public int FlashlightChance { get; set; } = 33;
     }
 }
