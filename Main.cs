@@ -109,11 +109,16 @@ public class Plugin : Plugin<Config>
 
     public override void OnEnabled()
     {
-        _dbHelper = new MyDatabaseHelper(Config.ConnectionString);
         Instance = this;
+
+        if (Config.Database.Enabled)
+        {
+            _dbHelper = new MyDatabaseHelper(Config.Database.ConnectionString);
+            _dbHelper.TestConnectionAsync();
+        }
+
         Player.Died += OnDie;
         Player.Hurt += PlayerHurt;
-        _dbHelper.TestConnectionAsync();
         Server.RespawnedTeam += OnTeamRespawned;
         Server.RoundStarted += OnRoundStarted;
         Player.Joined += OnJoined;
@@ -125,6 +130,7 @@ public class Plugin : Plugin<Config>
         Player.Spawned += PlayerSpawned;
         Player.ActivatingGenerator += BeforeActGenerator;
         Player.PickingUpItem += pickingUpItem;
+
         base.OnEnabled();
         Log.Info("Плагин включён!");
     }
@@ -167,6 +173,9 @@ public class Plugin : Plugin<Config>
 
     private void OnDie(DiedEventArgs ev)
     {
+        if (!Config.Stats.Enabled)
+            return;
+
         int playerId = ev.Player.Id;
         string playerIdSt = Convert.ToString(playerId);
         ev.Player.Broadcast(7,
@@ -231,6 +240,9 @@ public class Plugin : Plugin<Config>
 
     private void PlayerHurt(HurtEventArgs ev)
     {
+        if (!Config.Stats.Enabled)
+            return;
+
         float damageDealed = ev.Amount;
         int damageDealedInt = Convert.ToInt32(damageDealed);
         int playerid = ev.Attacker.Id;
@@ -245,11 +257,13 @@ public class Plugin : Plugin<Config>
 
     private void OnJoined(JoinedEventArgs ev)
     {
+        if (!Config.Stats.Enabled)
+            return;
+
         string id = Convert.ToString(ev.Player.UserId);
         string nickname = ev.Player.Nickname;
         int nonId = ev.Player.Id;
         Log.Warn(id + nickname + nonId);
-        //dbHelper.CreateRow(id, nickname);
         int playerId = ev.Player.Id;
         string playerIdSt = Convert.ToString(playerId);
         _playerStats[playerIdSt] = new PlayerStats { Kills = 0, DamageDealed = 0, FFkills = 0 };
@@ -267,7 +281,8 @@ public class Plugin : Plugin<Config>
             string nickname = player.Nickname;
             int nonId = player.Id;
             Log.Warn(id + nickname + nonId);
-            _dbHelper.CreateRow(id, nickname);
+            if (Config.Database.Enabled)
+                _dbHelper.CreateRow(id, nickname);
 
             if ((player.Role == RoleTypeId.ClassD || player.Role == RoleTypeId.Scientist) &&
                 Random.Range(1, 101) <= Config.FlashlightChance)
@@ -301,22 +316,31 @@ public class Plugin : Plugin<Config>
 
         Respawn.AdvanceTimer(SpawnableFaction.NtfWave, 50);
         Respawn.AdvanceTimer(SpawnableFaction.ChaosWave, 50);
-        _generatorCount = 0;
-        Log.Info("Я в OnRoundStarted, сейчас буду запускать корутину!");
-        _lightsCoroutine = Timing.RunCoroutine(LightsCoroutine());
-        _warheadCoroutine = Timing.RunCoroutine(WarheadCoroutine());
-        Log.Info("Корутину запустил, _lightsCoroutine: " + _lightsCoroutine);
-        Map.TurnOffAllLights(12000f, ZoneType.HeavyContainment);
+        if (Config.Blackout.Enabled)
+        {
+            _generatorCount = 0;
+            Log.Info("Я в OnRoundStarted, сейчас буду запускать корутину!");
+            _lightsCoroutine = Timing.RunCoroutine(LightsCoroutine());
+            Log.Info("Корутину запустил, _lightsCoroutine: " + _lightsCoroutine);
+            Map.TurnOffAllLights(12000f, ZoneType.HeavyContainment);
+        }
+
+        if (Config.AutoBomb.Enabled)
+            _warheadCoroutine = Timing.RunCoroutine(WarheadCoroutine());
     }
 
     private void OnRoundEnd(RoundEndedEventArgs ev)
     {
         ev.TimeToRestart = 15;
         Log.Info("Выключаю корутину");
-        Timing.KillCoroutines(_lightsCoroutine);
-        Timing.KillCoroutines(_heavyLightsStage1Coroutine);
-        Timing.KillCoroutines(_heavyLightsStage2Coroutine);
-        Timing.KillCoroutines(_warheadCoroutine);
+        if (Config.Blackout.Enabled)
+        {
+            Timing.KillCoroutines(_lightsCoroutine);
+            Timing.KillCoroutines(_heavyLightsStage1Coroutine);
+            Timing.KillCoroutines(_heavyLightsStage2Coroutine);
+        }
+        if (Config.AutoBomb.Enabled)
+            Timing.KillCoroutines(_warheadCoroutine);
         int MaxKills = 0;
         string MaxKillsNickname = null;
         string word = "убийств";
@@ -324,7 +348,8 @@ public class Plugin : Plugin<Config>
         {
             int playerid = player.Id;
             string playerIdSt = Convert.ToString(playerid);
-            if (_playerStats[playerIdSt].Kills - _playerStats[playerIdSt].FFkillsCount > MaxKills)
+            if (Config.Stats.Enabled &&
+                _playerStats[playerIdSt].Kills - _playerStats[playerIdSt].FFkillsCount > MaxKills)
             {
                 MaxKills = _playerStats[playerIdSt].Kills - _playerStats[playerIdSt].FFkillsCount;
                 MaxKillsNickname = player.Nickname;
@@ -345,29 +370,44 @@ public class Plugin : Plugin<Config>
             int playerid = player.Id;
             string userId = player.UserId;
             string playerIdSt = Convert.ToString(playerid);
-            int damageDealed = _playerStats[playerIdSt].DamageDealed;
-            int kills = _playerStats[playerIdSt].Kills;
-            int FFkillsCount = _playerStats[playerIdSt].FFkillsCount;
-            int takedSCPObjects = _playerStats[playerIdSt].takedSCPObjects;
-            int SCPsKilled = _playerStats[playerIdSt].SCPsKilled;
-            Log.Warn(userId + kills + damageDealed);
-            _dbHelper.UpdateStat(userId, kills, damageDealed, Round.ElapsedTime, FFkillsCount, takedSCPObjects,
-                SCPsKilled);
-            string elapsedTime = Round.ElapsedTime.ToString("mm':'ss");
-            player.Broadcast(7,
-                "Вы убили " + "<color=red>" + kills + "</color>" + " человек, из них союзников - " + "<color=red>" +
-                FFkillsCount + "</color>" + ". Всего нанесено урона: " +
-                "<color=red>" + damageDealed + "</color>\n" + "Самый результативный игрок - " + "<color=red>" + MaxKillsNickname + "</color>" + " с " + "<color=red>" + MaxKills + " </color>" + word );
+
+            if (Config.Stats.Enabled)
+            {
+                int damageDealed = _playerStats[playerIdSt].DamageDealed;
+                int kills = _playerStats[playerIdSt].Kills;
+                int FFkillsCount = _playerStats[playerIdSt].FFkillsCount;
+                int takedSCPObjects = _playerStats[playerIdSt].takedSCPObjects;
+                int SCPsKilled = _playerStats[playerIdSt].SCPsKilled;
+
+                if (Config.Database.Enabled)
+                {
+                    Log.Warn(userId + kills + damageDealed);
+                    _dbHelper.UpdateStat(userId, kills, damageDealed, Round.ElapsedTime, FFkillsCount,
+                        takedSCPObjects, SCPsKilled);
+                }
+
+                string elapsedTime = Round.ElapsedTime.ToString("mm':'ss");
+                player.Broadcast(7,
+                    "Вы убили " + "<color=red>" + kills + "</color>" + " человек, из них союзников - " +
+                    "<color=red>" + FFkillsCount + "</color>" + ". Всего нанесено урона: " +
+                    "<color=red>" + damageDealed + "</color>\n" + "Самый результативный игрок - " + "<color=red>" +
+                    MaxKillsNickname + "</color>" + " с " + "<color=red>" + MaxKills + " </color>" + word);
+            }
         }
     }
 
     private void OnRoundRestart()
     {
         Log.Info("Выключаю корутину");
-        Timing.KillCoroutines(_lightsCoroutine);
-        Timing.KillCoroutines(_heavyLightsStage1Coroutine);
-        Timing.KillCoroutines(_heavyLightsStage2Coroutine);
-        Timing.KillCoroutines(_warheadCoroutine);
+        if (Config.Blackout.Enabled)
+        {
+            Timing.KillCoroutines(_lightsCoroutine);
+            Timing.KillCoroutines(_heavyLightsStage1Coroutine);
+            Timing.KillCoroutines(_heavyLightsStage2Coroutine);
+        }
+
+        if (Config.AutoBomb.Enabled)
+            Timing.KillCoroutines(_warheadCoroutine);
     }
 
 
@@ -379,11 +419,15 @@ public class Plugin : Plugin<Config>
 
     private void BeforeActGenerator(ActivatingGeneratorEventArgs ev)
     {
+        if (!Config.Blackout.Enabled)
+            return;
         ev.Generator.ActivationTime = 10f;
     }
 
     private void GeneratorAct(GeneratorActivatingEventArgs ev)
     {
+        if (!Config.Blackout.Enabled)
+            return;
         _generatorCount++;
         if (_generatorCount == 1)
         {
@@ -490,11 +534,11 @@ public class Plugin : Plugin<Config>
         Log.Info("запуск цикла");
         while (true)
         {
-            int lightOffTime = Random.Range(Config.BlackoutDurationMin, Config.BlackoutDurationMax);
+            int lightOffTime = Random.Range(Config.Blackout.DurationMin, Config.Blackout.DurationMax);
             int chance = Random.Range(1, 101);
             Log.Info("Попытка рандома: Выпало " + chance + " и " + lightOffTime);
 
-            if (chance <= Config.BlackoutChance)
+            if (chance <= Config.Blackout.Chance)
             {
                 Map.TurnOffAllLights(lightOffTime, ZoneType.Entrance);
 
@@ -504,7 +548,7 @@ public class Plugin : Plugin<Config>
                 Cassie.GlitchyMessage("Lights out for " + lightOffTime + " seconds.", 0.4f, 0.2f);
             }
 
-            int nextDelay = Random.Range(Config.BlackoutIntervalMin, Config.BlackoutIntervalMax);
+            int nextDelay = Random.Range(Config.Blackout.IntervalMin, Config.Blackout.IntervalMax);
             yield return Timing.WaitForSeconds(nextDelay);
         }
     }
@@ -627,6 +671,9 @@ public class Plugin : Plugin<Config>
 
     private IEnumerator<float> WarheadCoroutine()
     {
+        if (!Config.AutoBomb.Enabled)
+            yield break;
+
         yield return Timing.WaitForSeconds(660f);
         while (true)
         {
