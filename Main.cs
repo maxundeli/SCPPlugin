@@ -269,10 +269,13 @@ public class Plugin : Plugin<Config>
             Log.Warn(id + nickname + nonId);
             _dbHelper.CreateRow(id, nickname);
 
-            if ((player.Role == RoleTypeId.ClassD || player.Role == RoleTypeId.Scientist) &&
-                Random.Range(1, 101) <= Config.FlashlightChance)
+            if (Config.SpawnItems.TryGetValue(player.Role, out var spawnList))
             {
-                player.AddItem(ItemType.Flashlight);
+                foreach (var spawn in spawnList)
+                {
+                    if (Random.Range(1, 101) <= spawn.Chance)
+                        player.AddItem(spawn.Item);
+                }
             }
 
             if ((player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||

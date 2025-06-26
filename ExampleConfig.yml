@@ -1,0 +1,18 @@
+# Example configuration for SCPPlugin
+is_enabled: true
+blackout_interval_min: 150
+blackout_interval_max: 150
+blackout_duration_min: 30
+blackout_duration_max: 90
+blackout_chance: 33
+spawn_items:
+  ClassD:
+    - item: Flashlight
+      chance: 33
+  Scientist:
+    - item: Flashlight
+      chance: 33
+# Additional groups can be added, for example
+#  facilityguard:
+#    - item: Radio
+#      chance: 50
