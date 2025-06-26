@@ -25,6 +25,12 @@ namespace MaxunPlugin
 
         [Description("Chance of giving a flashlight to D-Class or Scientist players at round start (0-100).")]
         public int FlashlightChance { get; set; } = 33;
+        
+        [Description("Enable SCP-3114")]
+        public bool Scp3114 { get; set; } = true;
+        
+        [Description("Chance to SCP-3114")]
+        public int Scp3114Chance { get; set; } = 20;
     }
 
     public class ModuleBase

@@ -273,14 +273,28 @@ public class Plugin : Plugin<Config>
     private void OnRoundStarted()
     {
         UnityEngine.Random.InitState((int)DateTime.UtcNow.Ticks);
-        int ChanceTo3114 = Random.Range(1, 9);
+        bool isScp3114Spawned = false;
         _warheadChanceCounter = 0;
         foreach (var player in Exiled.API.Features.Player.List)
         {
+            
+            
             string id = player.UserId;
             string nickname = player.Nickname;
             int nonId = player.Id;
             Log.Warn(id + nickname + nonId);
+            if (Config.Scp3114 == true)
+            {
+                int chanceTo3114 = Random.Range(1, 101);
+                if ((chanceTo3114 <= Config.Scp3114Chance) && (player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||
+                    player.Role == RoleTypeId.Scp079 || player.Role == RoleTypeId.Scp096 ||
+                    player.Role == RoleTypeId.Scp106 || player.Role == RoleTypeId.Scp173 ||
+                    player.Role == RoleTypeId.Scp939) && isScp3114Spawned == false)
+                {
+                    player.RoleManager.ServerSetRole(RoleTypeId.Scp3114, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.All);
+                    isScp3114Spawned = true;
+                }
+            }
             if (Config.Database.Enabled)
                 _dbHelper.CreateRow(id, nickname);
 
@@ -289,15 +303,6 @@ public class Plugin : Plugin<Config>
             {
                 player.AddItem(ItemType.Flashlight);
             }
-
-            if ((player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||
-                 player.Role == RoleTypeId.Scp079 || player.Role == RoleTypeId.Scp096 ||
-                 player.Role == RoleTypeId.Scp106 || player.Role == RoleTypeId.Scp173 ||
-                 player.Role == RoleTypeId.Scp939) && ChanceTo3114 == 5)
-            {
-                player.RoleManager.ServerSetRole(RoleTypeId.Scp3114, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.All);
-            }
-            
         }
 
         try
