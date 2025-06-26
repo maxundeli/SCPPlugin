@@ -102,8 +102,8 @@ public class Plugin : Plugin<Config>
     private CoroutineHandle _warheadCoroutine;
     private CoroutineHandle _ollamacoroutine;
 
-    public override string Name => "MyPlugin";
-    public override string Author => "Твоё Имя";
+    public override string Name => "MaxunPlugin";
+    public override string Author => "maxundeli";
     public override Version Version => new(1, 0, 0);
     public override Version RequiredExiledVersion => new(6, 0, 0);
 
