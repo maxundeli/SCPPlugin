@@ -289,7 +289,7 @@ public class Plugin : Plugin<Config>
                 if ((chanceTo3114 <= Config.Scp3114Chance) && (player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||
                     player.Role == RoleTypeId.Scp079 || player.Role == RoleTypeId.Scp096 ||
                     player.Role == RoleTypeId.Scp106 || player.Role == RoleTypeId.Scp173 ||
-                    player.Role == RoleTypeId.Scp939) && isScp3114Spawned == false)
+                    player.Role == RoleTypeId.Scp939))
                 {
                     player.RoleManager.ServerSetRole(RoleTypeId.Scp3114, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.All);
                     isScp3114Spawned = true;
