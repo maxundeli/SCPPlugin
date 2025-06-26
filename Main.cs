@@ -283,7 +283,7 @@ public class Plugin : Plugin<Config>
             string nickname = player.Nickname;
             int nonId = player.Id;
             Log.Warn(id + nickname + nonId);
-            if (Config.Scp3114 == true)
+            if (Config.Scp3114 && !isScp3114Spawned)
             {
                 int chanceTo3114 = Random.Range(1, 101);
                 if ((chanceTo3114 <= Config.Scp3114Chance) && (player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||
