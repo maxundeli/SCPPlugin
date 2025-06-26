@@ -77,10 +77,10 @@ namespace MaxunPlugin
     public class BlackoutModule : ModuleBase
     {
         [Description("Minimum seconds between blackout attempts.")]
-        public int IntervalMin { get; set; } = 150;
+        public int IntervalMin { get; set; } = 130;
 
         [Description("Maximum seconds between blackout attempts.")]
-        public int IntervalMax { get; set; } = 150;
+        public int IntervalMax { get; set; } = 170;
 
         [Description("Minimum duration of blackout in seconds.")]
         public int DurationMin { get; set; } = 30;
