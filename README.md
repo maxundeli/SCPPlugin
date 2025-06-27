@@ -13,7 +13,26 @@ MaxunPlugin is an Exiled plugin for SCP: Secret Laboratory servers. It introduce
 
 ## Building
 
-This project targets **.NET Framework 4.8**. Use the .NET SDK to compile:
+This project targets **.NET Framework 4.8**. External libraries required for building are not included in the repository.
+
+The following assemblies must exist on your machine:
+
+- `Assembly-CSharp.dll`
+- `Assembly-CSharp-firstpass.dll`
+- `UnityEngine.CoreModule.dll`
+- `Mirror.dll`
+- `Exiled.API.dll`
+- `Exiled.Events.dll`
+- `Exiled.Loader.dll`
+
+`Exiled.API.dll` is located in
+`~/.config/SCP Secret Laboratory/LabAPI/dependencies/global/`.
+The game assemblies (`Assembly-CSharp*`, `UnityEngine.*`, `Mirror.dll`) reside in
+`~/SCP Secret Laboratory Dedicated Server/SCPSL_Data/Managed/`.
+EXILED modules (`Exiled.Events.dll`, `Exiled.Loader.dll`) are found in
+`~/.config/EXILED/Plugins/`.
+
+Use the .NET SDK to compile:
 
 ```bash
 # from the repository root

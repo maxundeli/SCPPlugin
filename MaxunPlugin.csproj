@@ -10,25 +10,25 @@
 
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(HOME)/SCP Secret Laboratory Dedicated Server/SCPSL_Data/Managed/Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>$(HOME)/SCP Secret Laboratory Dedicated Server/SCPSL_Data/Managed/Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="Exiled.API">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Exiled.API.dll</HintPath>
+      <HintPath>$(HOME)/.config/SCP Secret Laboratory/LabAPI/dependencies/global/Exiled.API.dll</HintPath>
     </Reference>
     <Reference Include="Exiled.Events">
-      <HintPath>..\..\..\..\Downloads\Exiled\EXILED\Plugins\Exiled.Events.dll</HintPath>
+      <HintPath>$(HOME)/.config/EXILED/Plugins/Exiled.Events.dll</HintPath>
     </Reference>
     <Reference Include="Exiled.Loader">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Exiled.Loader.dll</HintPath>
+      <HintPath>$(HOME)/.config/EXILED/Plugins/Exiled.Loader.dll</HintPath>
     </Reference>
     <Reference Include="Mirror">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Mirror.dll</HintPath>
+      <HintPath>$(HOME)/SCP Secret Laboratory Dedicated Server/SCPSL_Data/Managed/Mirror.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\..\Downloads\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(HOME)/SCP Secret Laboratory Dedicated Server/SCPSL_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   
