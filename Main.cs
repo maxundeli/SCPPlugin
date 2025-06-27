@@ -75,7 +75,7 @@ public class OllamaClient
         }
         catch (Exception e)
         {
-            Log.Error("SendRequestAsync упал с ошибкой: " + e);
+            Log.Error("SendRequestAsync failed with error: " + e);
             return "Error: " + e;
         }
     }
@@ -132,7 +132,7 @@ public class Plugin : Plugin<Config>
         Player.PickingUpItem += pickingUpItem;
 
         base.OnEnabled();
-        Log.Info("Плагин включён!");
+        Log.Info("Plugin enabled!");
     }
 
     public override void OnDisabled()
@@ -152,7 +152,7 @@ public class Plugin : Plugin<Config>
         Player.ActivatingGenerator -= BeforeActGenerator;
         // Останавливаем корутину при отключении
         base.OnDisabled();
-        Log.Info("Плагин выключён!");
+        Log.Info("Plugin disabled!");
     }
 
     private void DeadmanS(DeadmanSwitchInitiatingEventArgs ev)
@@ -324,9 +324,9 @@ public class Plugin : Plugin<Config>
         if (Config.Blackout.Enabled)
         {
             _generatorCount = 0;
-            Log.Info("Я в OnRoundStarted, сейчас буду запускать корутину!");
+            Log.Info("OnRoundStarted - starting coroutine!");
             _lightsCoroutine = Timing.RunCoroutine(LightsCoroutine());
-            Log.Info("Корутину запустил, _lightsCoroutine: " + _lightsCoroutine);
+            Log.Info("Coroutine started, _lightsCoroutine: " + _lightsCoroutine);
             Map.TurnOffAllLights(12000f, ZoneType.HeavyContainment);
         }
 
@@ -337,7 +337,7 @@ public class Plugin : Plugin<Config>
     private void OnRoundEnd(RoundEndedEventArgs ev)
     {
         ev.TimeToRestart = 15;
-        Log.Info("Выключаю корутину");
+        Log.Info("Stopping coroutine");
         if (Config.Blackout.Enabled)
         {
             Timing.KillCoroutines(_lightsCoroutine);
@@ -403,7 +403,7 @@ public class Plugin : Plugin<Config>
 
     private void OnRoundRestart()
     {
-        Log.Info("Выключаю корутину");
+        Log.Info("Stopping coroutine");
         if (Config.Blackout.Enabled)
         {
             Timing.KillCoroutines(_lightsCoroutine);
@@ -436,7 +436,7 @@ public class Plugin : Plugin<Config>
         _generatorCount++;
         if (_generatorCount == 1)
         {
-            Log.Info("Запуск первого генератора. Включение света, запуск корутины stage1");
+            Log.Info("First generator activated. Lights on, starting stage1 coroutine");
             Map.TurnOnAllLights(new[]
             {
                 ZoneType.HeavyContainment
@@ -446,7 +446,7 @@ public class Plugin : Plugin<Config>
 
         if (_generatorCount == 2)
         {
-            Log.Info("Запуск второго генератора. Включение света, запуск корутины stage2");
+            Log.Info("Second generator activated. Lights on, starting stage2 coroutine");
             Timing.KillCoroutines(_heavyLightsStage1Coroutine);
             Map.TurnOnAllLights(new[]
             {
@@ -457,7 +457,7 @@ public class Plugin : Plugin<Config>
 
         if (_generatorCount == 3)
         {
-            Log.Info("Запуск третьего генератора. Включение света");
+            Log.Info("Third generator activated. Lights on");
             Timing.KillCoroutines(_heavyLightsStage2Coroutine);
             Map.ChangeLightsColor(Color.clear);
             Timing.KillCoroutines(_lightsCoroutine);
@@ -489,7 +489,7 @@ public class Plugin : Plugin<Config>
         Map.ChangeLightsColor(Color.blue);
         yield return Timing.WaitForSeconds(8f);
         Map.ChangeLightsColor(Color.clear);
-        Log.Info("корутина stage1 запущена");
+        Log.Info("Stage1 coroutine started");
         yield return Timing.WaitForSeconds(60);
         while (true)
         {
@@ -515,7 +515,7 @@ public class Plugin : Plugin<Config>
         Map.ChangeLightsColor(Color.blue);
         yield return Timing.WaitForSeconds(8f);
         Map.ChangeLightsColor(Color.clear);
-        Log.Info("корутина stage2 запущена");
+        Log.Info("Stage2 coroutine started");
         yield return Timing.WaitForSeconds(60);
         while (true)
         {
@@ -534,14 +534,14 @@ public class Plugin : Plugin<Config>
     private IEnumerator<float> LightsCoroutine()
     {
         int delay = Random.Range(60, 90);
-        Log.Info("Задержка " + delay + " секунд");
+        Log.Info("Delay " + delay + " seconds");
         yield return Timing.WaitForSeconds(delay);
-        Log.Info("запуск цикла");
+        Log.Info("Starting loop");
         while (true)
         {
             int lightOffTime = Random.Range(Config.Blackout.DurationMin, Config.Blackout.DurationMax);
             int chance = Random.Range(1, 101);
-            Log.Info("Попытка рандома: Выпало " + chance + " и " + lightOffTime);
+            Log.Info("Random attempt: got " + chance + " and " + lightOffTime);
 
             if (chance <= Config.Blackout.Chance)
             {
@@ -688,7 +688,7 @@ public class Plugin : Plugin<Config>
 
             if (_warheadChanceCounter > 3)
             {
-                Log.Info("Повышенный шанс на взрыв. Выпало - " + warheadActMegaChance + " Цель - 2");
+                Log.Info("Increased detonation chance. Rolled - " + warheadActMegaChance + " Target - 2");
                 if (warheadActMegaChance == 2)
                 {
                     _DeadManCoroutine = Timing.RunCoroutine(DeadManActivation());
@@ -698,7 +698,7 @@ public class Plugin : Plugin<Config>
 
             else
             {
-                Log.Info("Шанс на взрыв. Выпало - " + warheadActChance + " Цель - 2");
+                Log.Info("Detonation chance. Rolled - " + warheadActChance + " Target - 2");
                 if (warheadActChance == 2)
                 {
                     _DeadManCoroutine = Timing.RunCoroutine(DeadManActivation());
