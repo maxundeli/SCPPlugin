@@ -39,7 +39,7 @@ debug: false
 
 database:
   enabled: true
-  connection_string: "Server=localhost;Database=scp;User ID=maxundeli;Password=Maxx1826583ru;Pooling=true;"
+  connection_string: "Server=localhost;Database=scp_db;User ID=scp_user;Password=scp_password;Pooling=true;"
 
 blackout:
   enabled: true

@@ -71,7 +71,7 @@ namespace MaxunPlugin
     {
         [Description("Connection string for the MySQL database.")]
         public string ConnectionString { get; set; } =
-            "Server=localhost;Database=scp;User ID=maxundeli;Password=Maxx1826583ru;Pooling=true;";
+            "Server=localhost;Database=scp_db;User ID=scp_user;Password=scp_password;Pooling=true;";
     }
 
     public class BlackoutModule : ModuleBase
