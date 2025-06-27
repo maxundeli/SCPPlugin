@@ -87,7 +87,6 @@ public class Plugin : Plugin<Config>
         Exiled.Events.Handlers.Map.GeneratorActivating -= GeneratorAct;
         Player.PickingUpItem -= pickingUpItem;
         Player.ActivatingGenerator -= BeforeActGenerator;
-        // Останавливаем корутину при отключении
         base.OnDisabled();
         Log.Info("Plugin disabled!");
     }
@@ -542,7 +541,6 @@ public class Plugin : Plugin<Config>
         public int takedSCPObjects { get; set; }
         public int SCPsKilled { get; set; }
         public int DamageDealed { get; set; }
-        // Можешь добавить другие свойства, как тебе нужно
     }
 
     public class PlayerLifeStats
@@ -550,6 +548,5 @@ public class Plugin : Plugin<Config>
         public int KillsLife { get; set; }
 
         public int DamageDealedLife { get; set; }
-        // Можешь добавить другие свойства, как тебе нужно
     }
 }
