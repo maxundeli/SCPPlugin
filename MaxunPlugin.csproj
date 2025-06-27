@@ -10,25 +10,25 @@
 
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Assembly-CSharp.dll</HintPath>
+      <HintPath>Compiling\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>Compiling\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="Exiled.API">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Exiled.API.dll</HintPath>
+      <HintPath>Compiling\Exiled.API.dll</HintPath>
     </Reference>
     <Reference Include="Exiled.Events">
-      <HintPath>..\..\..\..\Downloads\Exiled\EXILED\Plugins\Exiled.Events.dll</HintPath>
+      <HintPath>Compiling\Exiled.Events.dll</HintPath>
     </Reference>
     <Reference Include="Exiled.Loader">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Exiled.Loader.dll</HintPath>
+      <HintPath>Compiling\Exiled.Loader.dll</HintPath>
     </Reference>
     <Reference Include="Mirror">
-      <HintPath>..\..\..\..\..\..\ExiledDependencies\Mirror.dll</HintPath>
+      <HintPath>Compiling\Mirror.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\..\Downloads\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>Compiling\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   

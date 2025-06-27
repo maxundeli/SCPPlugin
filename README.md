@@ -13,7 +13,7 @@ MaxunPlugin is an Exiled plugin for SCP: Secret Laboratory servers. It introduce
 
 ## Building
 
-This project targets **.NET Framework 4.8**. Use the .NET SDK to compile:
+This project targets **.NET Framework 4.8**. All libraries required for building are located in the `Compiling` directory. Use the .NET SDK to compile:
 
 ```bash
 # from the repository root
@@ -25,8 +25,8 @@ The resulting `MaxunPlugin.dll` will be in `bin/Release/net48`.
 ## Installation
 
 1. Build the plugin or download a precompiled release.
-2. Copy `MaxunPlugin.dll` into the `Exiled/Plugins` folder on your server.
-3. Ensure the required dependencies from the `ExiledDependencies` directory are available in the plugin folder.
+2. Place `MaxunPlugin.dll` into the `.config/EXILED/Plugins` directory on your server.
+3. Copy all files from the `ExiledDependencies` folder to `.config/EXILED/Plugins/Dependencies`.
 4. Restart the server to generate a configuration file.
 
 ## Configuration
