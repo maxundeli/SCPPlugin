@@ -149,6 +149,10 @@ namespace MaxunPlugin
         {
             StartFile();
             Write("Game Event", "Round", "Round started");
+            foreach (var pl in Exiled.API.Features.Player.List)
+            {
+                Write("Player List", "Round", pl.Nickname + " - " + pl.Role.Type);
+            }
         }
         private void OnRoundEnded(RoundEndedEventArgs ev)
         {
@@ -182,7 +186,7 @@ namespace MaxunPlugin
         }
         private void OnSpawned(SpawnedEventArgs ev)
         {
-            Write("Game Event", "Spawn", ev.Player.Nickname + " spawned as " + ev.Player.Role);
+            Write("Game Event", "Spawn", ev.Player.Nickname + " spawned as " + ev.Player.Role.Type);
         }
         private void OnPickingUpItem(PickingUpItemEventArgs ev)
         {
@@ -198,7 +202,7 @@ namespace MaxunPlugin
         }
         private void OnDoorInteract(InteractingDoorEventArgs ev)
         {
-            Write("Game Event", "Door", ev.Player.Nickname + " " + (ev.IsAllowed ? "opened" : "failed to open") + " " + ev.Door?.Name + " as " + ev.Player.Role);
+            Write("Game Event", "Door", ev.Player.Nickname + " " + (ev.IsAllowed ? "opened" : "failed to open") + " " + ev.Door?.Name + " as " + ev.Player.Role.Type);
         }
         private void OnTriggerTesla(TriggeringTeslaEventArgs ev)
         {
@@ -257,7 +261,7 @@ namespace MaxunPlugin
 
         private void OnDroppingAmmo(DroppingAmmoEventArgs ev)
         {
-            Write("Game Event", "Ammo", ev.Player.Nickname + " dropping " + ev.AmmoType + " x" + ev.Amount + " pickups " + ev.AmmoPickups.Count());
+            Write("Game Event", "Ammo", ev.Player.Nickname + " dropping " + ev.AmmoType + " x" + ev.Amount);
         }
 
         private void OnDroppedAmmo(DroppedAmmoEventArgs ev)
@@ -302,7 +306,7 @@ namespace MaxunPlugin
 
         private void OnEscaping(EscapingEventArgs ev)
         {
-            Write("Game Event", "Escape", ev.Player.Nickname + " escaped as " + ev.NewRole + " scenario " + ev.EscapeScenario + " tickets " + ev.RespawnTickets);
+            Write("Game Event", "Escape", ev.Player.Nickname + " escaped as " + ev.NewRole + " scenario " + ev.EscapeScenario);
         }
     }
 }
