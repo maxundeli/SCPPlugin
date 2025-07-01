@@ -43,10 +43,18 @@ namespace MaxunPlugin
             Player.ActivatingGenerator += OnActivatingGenerator;
             Player.InteractingDoor += OnDoorInteract;
             Player.TriggeringTesla += OnTriggerTesla;
+            Player.InteractingElevator += OnElevatorInteract;
+            Player.InteractingLocker += OnLockerInteract;
+            Player.DroppingAmmo += OnDroppingAmmo;
+            Player.DroppedAmmo += OnDroppedAmmo;
 
             Map.GeneratorActivating += OnGeneratorActivating;
             Map.Decontaminating += OnDecontaminating;
             Map.AnnouncingNtfEntrance += OnNtfAnnounced;
+            Map.ExplodingGrenade += OnGrenadeExploding;
+            Map.SpawningItem += OnSpawningItem;
+            Map.PickupAdded += OnPickupAdded;
+            Map.PickupDestroyed += OnPickupDestroyed;
 
             Scp096.AddingTarget += On096AddingTarget;
             Scp096.Enraging += On096Enraging;
@@ -56,6 +64,8 @@ namespace MaxunPlugin
             Warhead.Starting += OnWarheadStarting;
             Warhead.Stopping += OnWarheadStopping;
             Warhead.DeadmanSwitchInitiating += OnDeadmanSwitch;
+            Warhead.Detonating += OnWarheadDetonating;
+            Warhead.ChangingLeverStatus += OnChangingLever;
         }
 
         public void Unregister()
@@ -76,10 +86,18 @@ namespace MaxunPlugin
             Player.ActivatingGenerator -= OnActivatingGenerator;
             Player.InteractingDoor -= OnDoorInteract;
             Player.TriggeringTesla -= OnTriggerTesla;
+            Player.InteractingElevator -= OnElevatorInteract;
+            Player.InteractingLocker -= OnLockerInteract;
+            Player.DroppingAmmo -= OnDroppingAmmo;
+            Player.DroppedAmmo -= OnDroppedAmmo;
 
             Map.GeneratorActivating -= OnGeneratorActivating;
             Map.Decontaminating -= OnDecontaminating;
             Map.AnnouncingNtfEntrance -= OnNtfAnnounced;
+            Map.ExplodingGrenade -= OnGrenadeExploding;
+            Map.SpawningItem -= OnSpawningItem;
+            Map.PickupAdded -= OnPickupAdded;
+            Map.PickupDestroyed -= OnPickupDestroyed;
 
             Scp096.AddingTarget -= On096AddingTarget;
             Scp096.Enraging -= On096Enraging;
@@ -89,6 +107,8 @@ namespace MaxunPlugin
             Warhead.Starting -= OnWarheadStarting;
             Warhead.Stopping -= OnWarheadStopping;
             Warhead.DeadmanSwitchInitiating -= OnDeadmanSwitch;
+            Warhead.Detonating -= OnWarheadDetonating;
+            Warhead.ChangingLeverStatus -= OnChangingLever;
         }
 
         public void StopLogging()
@@ -218,6 +238,56 @@ namespace MaxunPlugin
         private void OnDeadmanSwitch(DeadmanSwitchInitiatingEventArgs ev)
         {
             Write("Game Event", "Warhead", "Deadman switch activating");
+        }
+
+        private void OnElevatorInteract(InteractingElevatorEventArgs ev)
+        {
+            Write("Game Event", "Elevator", ev.Player.Nickname + " used elevator");
+        }
+
+        private void OnLockerInteract(InteractingLockerEventArgs ev)
+        {
+            Write("Game Event", "Locker", ev.Player.Nickname + " interacted with locker");
+        }
+
+        private void OnDroppingAmmo(DroppingAmmoEventArgs ev)
+        {
+            Write("Game Event", "Ammo", ev.Player.Nickname + " dropping " + ev.AmmoType + " x" + ev.Amount);
+        }
+
+        private void OnDroppedAmmo(DroppedAmmoEventArgs ev)
+        {
+            Write("Game Event", "Ammo", ev.Player.Nickname + " dropped " + ev.AmmoType + " x" + ev.Amount);
+        }
+
+        private void OnGrenadeExploding(ExplodingGrenadeEventArgs ev)
+        {
+            Write("Game Event", "Grenade", (ev.Player?.Nickname ?? "Unknown") + " grenade exploding");
+        }
+
+        private void OnSpawningItem(SpawningItemEventArgs ev)
+        {
+            Write("Game Event", "Map", "Spawning item " + ev.Pickup.Type);
+        }
+
+        private void OnPickupAdded(PickupAddedEventArgs ev)
+        {
+            Write("Game Event", "Pickup", "Pickup spawned " + ev.Pickup.Type);
+        }
+
+        private void OnPickupDestroyed(PickupDestroyedEventArgs ev)
+        {
+            Write("Game Event", "Pickup", "Pickup destroyed " + ev.Pickup.Type);
+        }
+
+        private void OnWarheadDetonating(DetonatingEventArgs ev)
+        {
+            Write("Game Event", "Warhead", "Warhead detonating");
+        }
+
+        private void OnChangingLever(ChangingLeverStatusEventArgs ev)
+        {
+            Write("Game Event", "Warhead", "Lever changed by " + (ev.Player?.Nickname ?? "Unknown"));
         }
     }
 }
