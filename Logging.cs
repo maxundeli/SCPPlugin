@@ -101,7 +101,7 @@ namespace MaxunPlugin
             string name = DateTimeOffset.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".txt";
             string path = Path.Combine(_logDir, name);
             _writer = new StreamWriter(path, true);
-            Log.Info($"Round log file created at {path}");
+            Log.Info("Round log file created at " + path);
         }
 
         private void CloseFile()
@@ -115,7 +115,7 @@ namespace MaxunPlugin
         {
             if (_writer == null) return;
             string ts = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz");
-            _writer.WriteLine($"{ts} | {category.PadRight(18)} | {sub.PadRight(14)} | {message}");
+            _writer.WriteLine(ts + " | " + category.PadRight(18) + " | " + sub.PadRight(14) + " | " + message);
             _writer.Flush();
         }
 
@@ -127,7 +127,7 @@ namespace MaxunPlugin
         }
         private void OnRoundEnded(RoundEndedEventArgs ev)
         {
-            Write("Game Event", "Round", $"Round ended. Leading team: {ev.LeadingTeam}");
+            Write("Game Event", "Round", "Round ended. Leading team: " + ev.LeadingTeam);
             CloseFile();
         }
         private void OnRoundRestart()
@@ -137,47 +137,47 @@ namespace MaxunPlugin
         }
         private void OnTeamRespawned(RespawnedTeamEventArgs ev)
         {
-            Write("Game Event", "Respawn", $"Team respawned: {ev.Wave} with players: {ev.Players}");
+            Write("Game Event", "Respawn", "Team respawned: " + ev.Wave + " with players: " + ev.Players);
         }
         private void OnJoined(JoinedEventArgs ev)
         {
-            Write("Connection update", "Networking", $"{ev.Player.Nickname} ({ev.Player.UserId}) joined");
+            Write("Connection update", "Networking", ev.Player.Nickname + " (" + ev.Player.UserId + ") joined");
         }
         private void OnLeft(LeftEventArgs ev)
         {
-            Write("Connection update", "Networking", $"{ev.Player.Nickname} ({ev.Player.UserId}) left");
+            Write("Connection update", "Networking", ev.Player.Nickname + " (" + ev.Player.UserId + ") left");
         }
         private void OnHurt(HurtEventArgs ev)
         {
-            Write("Game Event", "Damage", $"{ev.Attacker?.Nickname} damaged {ev.Player.Nickname} for {ev.Amount}");
+            Write("Game Event", "Damage", (ev.Attacker?.Nickname) + " damaged " + ev.Player.Nickname + " for " + ev.Amount);
         }
         private void OnDied(DiedEventArgs ev)
         {
-            Write("Game Event", "Death", $"{ev.Player.Nickname} was killed by {ev.Attacker?.Nickname}");
+            Write("Game Event", "Death", ev.Player.Nickname + " was killed by " + ev.Attacker?.Nickname);
         }
         private void OnSpawned(SpawnedEventArgs ev)
         {
-            Write("Game Event", "Spawn", $"{ev.Player.Nickname} spawned as {ev.Player.Role}");
+            Write("Game Event", "Spawn", ev.Player.Nickname + " spawned as " + ev.Player.Role);
         }
         private void OnPickingUpItem(PickingUpItemEventArgs ev)
         {
-            Write("Game Event", "Item", $"{ev.Player.Nickname} picked up {ev.Pickup?.Info.ItemId}");
+            Write("Game Event", "Item", ev.Player.Nickname + " picked up " + ev.Pickup?.Info.ItemId);
         }
         private void OnDroppingItem(DroppingItemEventArgs ev)
         {
-            Write("Game Event", "Item", $"{ev.Player.Nickname} dropped {ev.Item.Type}");
+            Write("Game Event", "Item", ev.Player.Nickname + " dropped " + ev.Item.Type);
         }
         private void OnActivatingGenerator(ActivatingGeneratorEventArgs ev)
         {
-            Write("Game Event", "Generator", $"{ev.Player.Nickname} activating generator");
+            Write("Game Event", "Generator", ev.Player.Nickname + " activating generator");
         }
         private void OnDoorInteract(InteractingDoorEventArgs ev)
         {
-            Write("Game Event", "Door", $"{ev.Player.Nickname} {(ev.IsAllowed ? "opened" : "failed to open")} {ev.Door?.Name}");
+            Write("Game Event", "Door", ev.Player.Nickname + " " + (ev.IsAllowed ? "opened" : "failed to open") + " " + ev.Door?.Name);
         }
         private void OnTriggerTesla(TriggeringTeslaEventArgs ev)
         {
-            Write("Game Event", "Tesla", $"{ev.Player.Nickname} triggered tesla {ev.IsAllowed}");
+            Write("Game Event", "Tesla", ev.Player.Nickname + " triggered tesla " + ev.IsAllowed);
         }
         private void OnGeneratorActivating(GeneratorActivatingEventArgs ev)
         {
@@ -193,15 +193,15 @@ namespace MaxunPlugin
         }
         private void On096AddingTarget(AddingTargetEventArgs ev)
         {
-            Write("Game Event", "SCP-096", $"New target: {ev.Target.Nickname}");
+            Write("Game Event", "SCP-096", "New target: " + ev.Target.Nickname);
         }
         private void On096Enraging(EnragingEventArgs ev)
         {
-            Write("Game Event", "SCP-096", $"{ev.Player.Nickname} started enraging");
+            Write("Game Event", "SCP-096", ev.Player.Nickname + " started enraging");
         }
         private void On096Calming(CalmingDownEventArgs ev)
         {
-            Write("Game Event", "SCP-096", $"{ev.Player.Nickname} calmed down");
+            Write("Game Event", "SCP-096", ev.Player.Nickname + " calmed down");
         }
         private void OnWarheadDetonated()
         {
