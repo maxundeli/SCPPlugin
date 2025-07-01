@@ -48,10 +48,11 @@ public class Plugin : Plugin<Config>
     public override void OnEnabled()
     {
         Instance = this;
-
-        _roundLogger = new RoundLogger();
-        _roundLogger.Register();
-
+        if (Config.Logging.Enabled)
+        {
+            _roundLogger = new RoundLogger();
+            _roundLogger.Register(); 
+        }
         if (Config.Database.Enabled)
         {
             _dbHelper = new MyDatabaseHelper(Config.Database.ConnectionString);

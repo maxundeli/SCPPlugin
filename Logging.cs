@@ -157,7 +157,6 @@ namespace MaxunPlugin
         private void OnRoundEnded(RoundEndedEventArgs ev)
         {
             Write("Game Event", "Round", "Round ended. Leading team: " + ev.LeadingTeam);
-            CloseFile();
         }
         private void OnRoundRestart()
         {

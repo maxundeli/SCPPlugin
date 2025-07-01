@@ -22,6 +22,9 @@ namespace MaxunPlugin
 
         [Description("Statistics tracking module.")]
         public StatsModule Stats { get; set; } = new();
+        
+        [Description("Settings for random blackouts.")]
+        public LoggingModule Logging { get; set; } = new();
 
         [Description("Automatic warhead detonation module.")]
         public AutoBombModule AutoBomb { get; set; } = new();
@@ -100,4 +103,10 @@ namespace MaxunPlugin
     public class AutoBombModule : ModuleBase
     {
     }
+    public class LoggingModule : ModuleBase
+    {
+    
+    }
 }
+
+
