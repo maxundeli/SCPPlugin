@@ -489,7 +489,6 @@ public class Plugin : Plugin<Config>
             if (chance <= Config.Blackout.Chance)
             {
                 Map.TurnOffAllLights(lightOffTime, ZoneType.Entrance);
-
                 Map.TurnOffAllLights(lightOffTime, ZoneType.LightContainment);
                 Map.TurnOffAllLights(lightOffTime, ZoneType.Surface);
 

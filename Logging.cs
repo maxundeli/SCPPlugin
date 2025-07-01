@@ -7,6 +7,10 @@ using Exiled.Events.EventArgs.Map;
 using Exiled.Events.EventArgs.Scp096;
 using Exiled.Events.EventArgs.Warhead;
 using Exiled.Events.Handlers;
+using Map = Exiled.Events.Handlers.Map;
+using Player = Exiled.Events.Handlers.Player;
+using Server = Exiled.Events.Handlers.Server;
+using Warhead = Exiled.Events.Handlers.Warhead;
 
 namespace MaxunPlugin
 {
@@ -41,7 +45,6 @@ namespace MaxunPlugin
             Player.TriggeringTesla += OnTriggerTesla;
 
             Map.GeneratorActivating += OnGeneratorActivating;
-            Map.GeneratorActivated += OnGeneratorActivated;
             Map.Decontaminating += OnDecontaminating;
             Map.AnnouncingNtfEntrance += OnNtfAnnounced;
 
@@ -75,7 +78,6 @@ namespace MaxunPlugin
             Player.TriggeringTesla -= OnTriggerTesla;
 
             Map.GeneratorActivating -= OnGeneratorActivating;
-            Map.GeneratorActivated -= OnGeneratorActivated;
             Map.Decontaminating -= OnDecontaminating;
             Map.AnnouncingNtfEntrance -= OnNtfAnnounced;
 
@@ -135,7 +137,7 @@ namespace MaxunPlugin
         }
         private void OnTeamRespawned(RespawnedTeamEventArgs ev)
         {
-            Write("Game Event", "Respawn", $"Team respawned: {ev.Team}");
+            Write("Game Event", "Respawn", $"Team respawned: {ev.Wave} with players: {ev.Players}");
         }
         private void OnJoined(JoinedEventArgs ev)
         {
@@ -159,11 +161,11 @@ namespace MaxunPlugin
         }
         private void OnPickingUpItem(PickingUpItemEventArgs ev)
         {
-            Write("Game Event", "Item", $"{ev.Player.Nickname} picked up {ev.Pickup?.ItemId}");
+            Write("Game Event", "Item", $"{ev.Player.Nickname} picked up {ev.Pickup?.Info.ItemId}");
         }
         private void OnDroppingItem(DroppingItemEventArgs ev)
         {
-            Write("Game Event", "Item", $"{ev.Player.Nickname} dropped {ev.Item.ItemTypeId}");
+            Write("Game Event", "Item", $"{ev.Player.Nickname} dropped {ev.Item.Type}");
         }
         private void OnActivatingGenerator(ActivatingGeneratorEventArgs ev)
         {
@@ -180,10 +182,6 @@ namespace MaxunPlugin
         private void OnGeneratorActivating(GeneratorActivatingEventArgs ev)
         {
             Write("Game Event", "Generator", "Generator activating");
-        }
-        private void OnGeneratorActivated(GeneratorActivatedEventArgs ev)
-        {
-            Write("Game Event", "Generator", "Generator activated");
         }
         private void OnDecontaminating(DecontaminatingEventArgs ev)
         {
