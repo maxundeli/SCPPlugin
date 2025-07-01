@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Exiled.API.Features;
 using Exiled.Events.EventArgs.Player;
 using Exiled.Events.EventArgs.Server;
@@ -47,6 +48,8 @@ namespace MaxunPlugin
             Player.InteractingLocker += OnLockerInteract;
             Player.DroppingAmmo += OnDroppingAmmo;
             Player.DroppedAmmo += OnDroppedAmmo;
+            Player.ThrownProjectile += OnThrownProjectile;
+            Player.Escaping += OnEscaping;
 
             Map.GeneratorActivating += OnGeneratorActivating;
             Map.Decontaminating += OnDecontaminating;
@@ -90,6 +93,8 @@ namespace MaxunPlugin
             Player.InteractingLocker -= OnLockerInteract;
             Player.DroppingAmmo -= OnDroppingAmmo;
             Player.DroppedAmmo -= OnDroppedAmmo;
+            Player.ThrownProjectile -= OnThrownProjectile;
+            Player.Escaping -= OnEscaping;
 
             Map.GeneratorActivating -= OnGeneratorActivating;
             Map.Decontaminating -= OnDecontaminating;
@@ -169,7 +174,7 @@ namespace MaxunPlugin
         }
         private void OnHurt(HurtEventArgs ev)
         {
-            Write("Game Event", "Damage", (ev.Attacker?.Nickname) + " damaged " + ev.Player.Nickname + " for " + ev.Amount);
+            Write("Game Event", "Damage", (ev.Attacker?.Nickname) + " damaged " + ev.Player.Nickname + " for " + ev.Amount + " type " + ev.DamageHandler.Type);
         }
         private void OnDied(DiedEventArgs ev)
         {
@@ -185,7 +190,7 @@ namespace MaxunPlugin
         }
         private void OnDroppingItem(DroppingItemEventArgs ev)
         {
-            Write("Game Event", "Item", ev.Player.Nickname + " dropped " + ev.Item.Type);
+            Write("Game Event", "Item", ev.Player.Nickname + " dropped " + ev.Item.Type + " thrown " + ev.IsThrown);
         }
         private void OnActivatingGenerator(ActivatingGeneratorEventArgs ev)
         {
@@ -193,7 +198,7 @@ namespace MaxunPlugin
         }
         private void OnDoorInteract(InteractingDoorEventArgs ev)
         {
-            Write("Game Event", "Door", ev.Player.Nickname + " " + (ev.IsAllowed ? "opened" : "failed to open") + " " + ev.Door?.Name);
+            Write("Game Event", "Door", ev.Player.Nickname + " " + (ev.IsAllowed ? "opened" : "failed to open") + " " + ev.Door?.Name + " as " + ev.Player.Role);
         }
         private void OnTriggerTesla(TriggeringTeslaEventArgs ev)
         {
@@ -201,7 +206,7 @@ namespace MaxunPlugin
         }
         private void OnGeneratorActivating(GeneratorActivatingEventArgs ev)
         {
-            Write("Game Event", "Generator", "Generator activating");
+            Write("Game Event", "Generator", "Generator activating allowed " + ev.IsAllowed);
         }
         private void OnDecontaminating(DecontaminatingEventArgs ev)
         {
@@ -252,12 +257,12 @@ namespace MaxunPlugin
 
         private void OnDroppingAmmo(DroppingAmmoEventArgs ev)
         {
-            Write("Game Event", "Ammo", ev.Player.Nickname + " dropping " + ev.AmmoType + " x" + ev.Amount);
+            Write("Game Event", "Ammo", ev.Player.Nickname + " dropping " + ev.AmmoType + " x" + ev.Amount + " pickups " + ev.AmmoPickups.Count());
         }
 
         private void OnDroppedAmmo(DroppedAmmoEventArgs ev)
         {
-            Write("Game Event", "Ammo", ev.Player.Nickname + " dropped " + ev.AmmoType + " x" + ev.Amount);
+            Write("Game Event", "Ammo", ev.Player.Nickname + " dropped " + ev.AmmoType + " x" + ev.Amount + " pickups " + ev.AmmoPickups.Count());
         }
 
         private void OnGrenadeExploding(ExplodingGrenadeEventArgs ev)
@@ -288,6 +293,16 @@ namespace MaxunPlugin
         private void OnChangingLever(ChangingLeverStatusEventArgs ev)
         {
             Write("Game Event", "Warhead", "Lever changed by " + (ev.Player?.Nickname ?? "Unknown"));
+        }
+
+        private void OnThrownProjectile(ThrownProjectileEventArgs ev)
+        {
+            Write("Game Event", "Projectile", ev.Player.Nickname + " threw " + ev.Throwable.Type);
+        }
+
+        private void OnEscaping(EscapingEventArgs ev)
+        {
+            Write("Game Event", "Escape", ev.Player.Nickname + " escaped as " + ev.NewRole + " scenario " + ev.EscapeScenario + " tickets " + ev.RespawnTickets);
         }
     }
 }
