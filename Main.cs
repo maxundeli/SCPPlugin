@@ -38,6 +38,7 @@ public class Plugin : Plugin<Config>
     private CoroutineHandle _lightsCoroutine;
     private int _warheadChanceCounter;
     private CoroutineHandle _warheadCoroutine;
+    private RoundLogger _roundLogger;
 
     public override string Name => "MaxunPlugin";
     public override string Author => "maxundeli";
@@ -47,7 +48,11 @@ public class Plugin : Plugin<Config>
     public override void OnEnabled()
     {
         Instance = this;
-
+        if (Config.Logging.Enabled)
+        {
+            _roundLogger = new RoundLogger();
+            _roundLogger.Register(); 
+        }
         if (Config.Database.Enabled)
         {
             _dbHelper = new MyDatabaseHelper(Config.Database.ConnectionString);
@@ -74,6 +79,8 @@ public class Plugin : Plugin<Config>
 
     public override void OnDisabled()
     {
+        _roundLogger.Unregister();
+        _roundLogger.StopLogging();
         Player.Died -= OnDie;
         Player.Hurt -= PlayerHurt;
         Server.RoundStarted -= OnRoundStarted;
@@ -483,7 +490,6 @@ public class Plugin : Plugin<Config>
             if (chance <= Config.Blackout.Chance)
             {
                 Map.TurnOffAllLights(lightOffTime, ZoneType.Entrance);
-
                 Map.TurnOffAllLights(lightOffTime, ZoneType.LightContainment);
                 Map.TurnOffAllLights(lightOffTime, ZoneType.Surface);
 
