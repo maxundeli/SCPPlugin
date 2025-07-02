@@ -23,7 +23,7 @@ namespace MaxunPlugin
         [Description("Statistics tracking module.")]
         public StatsModule Stats { get; set; } = new();
         
-        [Description("Settings for random blackouts.")]
+        [Description("Settings for logging module")]
         public LoggingModule Logging { get; set; } = new();
 
         [Description("Automatic warhead detonation module.")]
