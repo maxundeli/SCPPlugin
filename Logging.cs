@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
+using System.Threading;
 using Exiled.API.Features;
 using Exiled.Events.EventArgs.Player;
 using Exiled.Events.EventArgs.Server;
@@ -19,6 +21,21 @@ namespace MaxunPlugin
     {
         private StreamWriter? _writer;
         private readonly string _logDir;
+
+        private readonly Dictionary<int, DateTimeOffset> _teslaCooldown = new();
+        private bool _deadmanLogged;
+
+        private readonly object _damageLock = new();
+        private readonly Dictionary<string, DamageAggregate> _damageBuffer = new();
+
+        private class DamageAggregate
+        {
+            public string Attacker = string.Empty;
+            public string Target = string.Empty;
+            public string Type = string.Empty;
+            public float Damage;
+            public System.Threading.Timer? Timer;
+        }
 
         public RoundLogger()
         {
@@ -144,9 +161,47 @@ namespace MaxunPlugin
             _writer.Flush();
         }
 
+        private void FlushAllDamage()
+        {
+            lock (_damageLock)
+            {
+                foreach (var key in _damageBuffer.Keys.ToList())
+                {
+                    FlushDamage(key);
+                }
+            }
+        }
+
+        private void FlushDamage(string key)
+        {
+            lock (_damageLock)
+            {
+                if (!_damageBuffer.TryGetValue(key, out var data))
+                    return;
+
+                Write("Game Event", "Damage", $"{data.Attacker} damaged {data.Target} for {data.Damage:F3} type {data.Type}");
+                data.Timer?.Dispose();
+                _damageBuffer.Remove(key);
+            }
+        }
+
+        private void FlushDamageForPlayer(int playerId)
+        {
+            lock (_damageLock)
+            {
+                foreach (var key in _damageBuffer.Keys.Where(k => k.StartsWith(playerId + "-") || k.Contains("-" + playerId + "-")).ToList())
+                {
+                    FlushDamage(key);
+                }
+            }
+        }
+
         private void OnWaitingForPlayers() => Write("Connection update", "Server", "Waiting for players");
         private void OnRoundStarted()
         {
+            _teslaCooldown.Clear();
+            _deadmanLogged = false;
+            FlushAllDamage();
             StartFile();
             Write("Game Event", "Round", "Round started");
             foreach (var pl in Exiled.API.Features.Player.List)
@@ -156,10 +211,14 @@ namespace MaxunPlugin
         }
         private void OnRoundEnded(RoundEndedEventArgs ev)
         {
+            FlushAllDamage();
             Write("Game Event", "Round", "Round ended. Leading team: " + ev.LeadingTeam);
         }
         private void OnRoundRestart()
         {
+            FlushAllDamage();
+            _deadmanLogged = false;
+            _teslaCooldown.Clear();
             Write("Game Event", "Round", "Round restarting");
             CloseFile();
         }
@@ -174,13 +233,28 @@ namespace MaxunPlugin
         private void OnLeft(LeftEventArgs ev)
         {
             Write("Connection update", "Networking", ev.Player.Nickname + " (" + ev.Player.UserId + ") left");
+            _teslaCooldown.Remove(ev.Player.Id);
+            FlushDamageForPlayer(ev.Player.Id);
         }
         private void OnHurt(HurtEventArgs ev)
         {
-            Write("Game Event", "Damage", (ev.Attacker?.Nickname) + " damaged " + ev.Player.Nickname + " for " + ev.Amount + " type " + ev.DamageHandler.Type);
+            if (ev.Attacker == null)
+            {
+                Write("Game Event", "Damage", "Unknown damaged " + ev.Player.Nickname + " for " + ev.Amount + " type " + ev.DamageHandler.Type);
+                return;
+            }
+
+            if (TryAggregateDamage(ev))
+                return;
+
+            Write("Game Event", "Damage", ev.Attacker.Nickname + " damaged " + ev.Player.Nickname + " for " + ev.Amount + " type " + ev.DamageHandler.Type);
         }
         private void OnDied(DiedEventArgs ev)
         {
+            FlushDamageForPlayer(ev.Player.Id);
+            if (ev.Attacker != null)
+                FlushDamageForPlayer(ev.Attacker.Id);
+
             Write("Game Event", "Death", ev.Player.Nickname + " was killed by " + ev.Attacker?.Nickname);
         }
         private void OnSpawned(SpawnedEventArgs ev)
@@ -205,6 +279,11 @@ namespace MaxunPlugin
         }
         private void OnTriggerTesla(TriggeringTeslaEventArgs ev)
         {
+            DateTimeOffset now = DateTimeOffset.Now;
+            if (_teslaCooldown.TryGetValue(ev.Player.Id, out var last) && (now - last).TotalSeconds < 10)
+                return;
+
+            _teslaCooldown[ev.Player.Id] = now;
             Write("Game Event", "Tesla", ev.Player.Nickname + " triggered tesla " + ev.IsAllowed);
         }
         private void OnGeneratorActivating(GeneratorActivatingEventArgs ev)
@@ -245,6 +324,10 @@ namespace MaxunPlugin
         }
         private void OnDeadmanSwitch(DeadmanSwitchInitiatingEventArgs ev)
         {
+            if (_deadmanLogged)
+                return;
+
+            _deadmanLogged = true;
             Write("Game Event", "Warhead", "Deadman switch activating");
         }
 
@@ -306,6 +389,50 @@ namespace MaxunPlugin
         private void OnEscaping(EscapingEventArgs ev)
         {
             Write("Game Event", "Escape", ev.Player.Nickname + " escaped as " + ev.NewRole + " scenario " + ev.EscapeScenario);
+        }
+
+        private bool TryAggregateDamage(HurtEventArgs ev)
+        {
+            string typeName = ev.DamageHandler.Type.ToString();
+            bool isStrangled = string.Equals(typeName, "Strangled", StringComparison.OrdinalIgnoreCase);
+            bool isShotgun = false;
+
+            if (ev.DamageHandler.GetType().Name.Contains("FirearmDamageHandler"))
+            {
+                var prop = ev.DamageHandler.GetType().GetProperty("WeaponType") ?? ev.DamageHandler.GetType().GetProperty("FirearmType");
+                string? weaponName = prop?.GetValue(ev.DamageHandler)?.ToString();
+                if (!string.IsNullOrEmpty(weaponName) && weaponName.Contains("Shotgun"))
+                    isShotgun = true;
+            }
+
+            if (!isStrangled && !isShotgun)
+                return false;
+
+            double delay = isStrangled ? 1000 : 100;
+            string key = $"{ev.Attacker.Id}-{ev.Player.Id}-{typeName}";
+
+            lock (_damageLock)
+            {
+                if (!_damageBuffer.TryGetValue(key, out var data))
+                {
+                    data = new DamageAggregate
+                    {
+                        Attacker = ev.Attacker.Nickname,
+                        Target = ev.Player.Nickname,
+                        Type = typeName,
+                        Damage = ev.Amount,
+                        Timer = new Timer(_ => FlushDamage(key), null, (int)delay, Timeout.Infinite)
+                    };
+                    _damageBuffer[key] = data;
+                }
+                else
+                {
+                    data.Damage += ev.Amount;
+                    data.Timer?.Change((int)delay, Timeout.Infinite);
+                }
+            }
+
+            return true;
         }
     }
 }
