@@ -40,6 +40,7 @@ public class MyDatabaseHelper
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Parameters.AddWithValue("@nickname", nickname);
                 await cmd.ExecuteNonQueryAsync();
+                Log.Debug($"CreateRow executed for {id} ({nickname})");
             }
             catch (Exception e)
             {
@@ -78,6 +79,7 @@ public class MyDatabaseHelper
             cmd.Parameters.AddWithValue("@userId", id);
 
             await cmd.ExecuteNonQueryAsync();
+            Log.Debug($"UpdateStat executed for {id}");
         }
         catch (Exception e)
         {
@@ -99,7 +101,7 @@ public class MyDatabaseHelper
             using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                return new StoredPlayerStats
+                var stats = new StoredPlayerStats
                 {
                     Kills = Convert.ToInt32(reader["kills"]),
                     DamageDealed = Convert.ToInt32(reader["damageDealed"]),
@@ -108,6 +110,8 @@ public class MyDatabaseHelper
                     TakedSCPObjects = Convert.ToInt32(reader["takedSCPObjects"]),
                     SCPsKilled = Convert.ToInt32(reader["SCPsKilled"])
                 };
+                Log.Debug($"Read stats for {id}: Kills={stats.Kills}");
+                return stats;
             }
         }
         catch (Exception e)

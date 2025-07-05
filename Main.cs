@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Text.Json;
 using Exiled.API.Enums;
 using Exiled.API.Features;
@@ -211,27 +212,27 @@ public class Plugin : Plugin<Config>
         if (!Config.Stats.Enabled)
             return;
 
-        string id = Convert.ToString(ev.Player.UserId);
-        string nickname = ev.Player.Nickname;
-        int nonId = ev.Player.Id;
-        Log.Warn(id + nickname + nonId);
-        int playerId = ev.Player.Id;
-        string playerIdSt = Convert.ToString(playerId);
+        Log.Info($"OnJoined: {ev.Player.Nickname} ({ev.Player.Id}) userId={ev.Player.UserId}");
+        string playerIdSt = ev.Player.Id.ToString();
         _playerStats[playerIdSt] = new PlayerStats { Kills = 0, DamageDealed = 0, FFkills = 0 };
         _playerLifeStats[playerIdSt] = new PlayerLifeStats { KillsLife = 0, DamageDealedLife = 0 };
-
-        if (Config.Database.Enabled)
-        {
-            _dbHelper.CreateRow(id, nickname);
-        }
     }
 
-    private void OnVerified(VerifiedEventArgs ev)
+    private async void OnVerified(VerifiedEventArgs ev)
     {
         if (!Config.Stats.Enabled || !Config.Database.Enabled)
             return;
 
-        _dbHelper.CreateRow(ev.Player.UserId, ev.Player.Nickname);
+        Log.Info($"OnVerified: {ev.Player.Nickname} userId={ev.Player.UserId}");
+        try
+        {
+            await _dbHelper.CreateRow(ev.Player.UserId, ev.Player.Nickname);
+        }
+        catch (Exception e)
+        {
+            Log.Error("CreateRow failed: " + e);
+        }
+
         if (!_roundStarted)
             StartHintCoroutine(ev.Player);
     }
@@ -248,6 +249,7 @@ public class Plugin : Plugin<Config>
     private void OnWaitingForPlayers()
     {
         _roundStarted = false;
+        Log.Info("OnWaitingForPlayers: showing lobby stats");
         foreach (var player in Exiled.API.Features.Player.List)
         {
             if (Config.Database.Enabled)
@@ -258,6 +260,7 @@ public class Plugin : Plugin<Config>
     private void OnRoundStarted()
     {
         _roundStarted = true;
+        Log.Info("OnRoundStarted: clearing lobby hints");
         foreach (var handle in _hintCoroutines.Values)
             Timing.KillCoroutines(handle);
         _hintCoroutines.Clear();
@@ -635,7 +638,7 @@ public class Plugin : Plugin<Config>
         }
     }
 
-    private void StartHintCoroutine(Exiled.API.Features.Player player)
+    private async void StartHintCoroutine(Exiled.API.Features.Player player)
     {
         if (string.IsNullOrEmpty(player.UserId) || _hintCoroutines.ContainsKey(player.UserId))
             return;
@@ -643,7 +646,17 @@ public class Plugin : Plugin<Config>
         if (_dbHelper == null)
             return;
 
-        var stats = _dbHelper.GetStatsAsync(player.UserId).GetAwaiter().GetResult();
+        Log.Debug($"Fetching stats for {player.UserId}");
+        StoredPlayerStats? stats = null;
+        try
+        {
+            stats = await _dbHelper.GetStatsAsync(player.UserId);
+        }
+        catch (Exception e)
+        {
+            Log.Error("GetStatsAsync failed: " + e);
+            return;
+        }
         if (stats == null)
             return;
 
@@ -656,6 +669,7 @@ public class Plugin : Plugin<Config>
                        $"Play time: <color=green>{stats.TimePlayed}</color>";
 
         _hintCoroutines[player.UserId] = Timing.RunCoroutine(StatsHintCoroutine(player, hint));
+        Log.Info($"Started stats hint for {player.Nickname}");
     }
 
     private IEnumerator<float> StatsHintCoroutine(Exiled.API.Features.Player player, string text)
