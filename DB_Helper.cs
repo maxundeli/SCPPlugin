@@ -1,7 +1,8 @@
-﻿using Exiled.API.Features;
+using Exiled.API.Features;
+using MySql.Data.MySqlClient;
+using System;
 
 namespace MaxunPlugin;
-using MySql.Data.MySqlClient;
 public class MyDatabaseHelper
 {
     private readonly string connectionString;
@@ -84,4 +85,47 @@ public class MyDatabaseHelper
             throw;
         }
     }
+
+    public async Task<StoredPlayerStats?> GetStatsAsync(string id)
+    {
+        using var conn = new MySqlConnection(connectionString);
+        try
+        {
+            await conn.OpenAsync();
+            var cmd = new MySqlCommand(
+                "SELECT kills, damageDealed, timePlayed, FFkills, takedSCPObjects, SCPsKilled FROM scp_stat WHERE ID = @id;",
+                conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new StoredPlayerStats
+                {
+                    Kills = Convert.ToInt32(reader["kills"]),
+                    DamageDealed = Convert.ToInt32(reader["damageDealed"]),
+                    TimePlayed = reader["timePlayed"].ToString() ?? "0:00:00",
+                    FFkills = Convert.ToInt32(reader["FFkills"]),
+                    TakedSCPObjects = Convert.ToInt32(reader["takedSCPObjects"]),
+                    SCPsKilled = Convert.ToInt32(reader["SCPsKilled"])
+                };
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e);
+            throw;
+        }
+
+        return null;
+    }
+}
+
+public class StoredPlayerStats
+{
+    public int Kills { get; set; }
+    public int DamageDealed { get; set; }
+    public string TimePlayed { get; set; } = string.Empty;
+    public int FFkills { get; set; }
+    public int TakedSCPObjects { get; set; }
+    public int SCPsKilled { get; set; }
 }

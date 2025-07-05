@@ -28,8 +28,9 @@ public class Plugin : Plugin<Config>
 
     public static Plugin Instance;
     private readonly Dictionary<string, PlayerLifeStats> _playerLifeStats = new();
-
     private readonly Dictionary<string, PlayerStats> _playerStats = new();
+    private readonly Dictionary<string, CoroutineHandle> _hintCoroutines = new();
+    private bool _roundStarted;
     private MyDatabaseHelper _dbHelper;
     private CoroutineHandle _DeadManCoroutine;
     private int _generatorCount;
@@ -62,8 +63,11 @@ public class Plugin : Plugin<Config>
         Player.Died += OnDie;
         Player.Hurt += PlayerHurt;
         Server.RespawnedTeam += OnTeamRespawned;
+        Server.WaitingForPlayers += OnWaitingForPlayers;
         Server.RoundStarted += OnRoundStarted;
         Player.Joined += OnJoined;
+        Player.Verified += OnVerified;
+        Player.Left += OnLeft;
         Server.RoundEnded += OnRoundEnd;
         Server.RestartingRound += OnRoundRestart;
         Scp096.AddingTarget += RageStart;
@@ -85,10 +89,13 @@ public class Plugin : Plugin<Config>
         Player.Hurt -= PlayerHurt;
         Server.RoundStarted -= OnRoundStarted;
         Player.Joined -= OnJoined;
+        Player.Verified -= OnVerified;
+        Player.Left -= OnLeft;
         Exiled.Events.Handlers.Warhead.DeadmanSwitchInitiating -= DeadmanS;
         Server.RoundEnded -= OnRoundEnd;
         Server.RestartingRound -= OnRoundRestart;
         Server.RespawnedTeam -= OnTeamRespawned;
+        Server.WaitingForPlayers -= OnWaitingForPlayers;
         Scp096.AddingTarget -= RageStart;
         Player.Spawned -= PlayerSpawned;
         Exiled.Events.Handlers.Map.GeneratorActivating -= GeneratorAct;
@@ -212,10 +219,49 @@ public class Plugin : Plugin<Config>
         string playerIdSt = Convert.ToString(playerId);
         _playerStats[playerIdSt] = new PlayerStats { Kills = 0, DamageDealed = 0, FFkills = 0 };
         _playerLifeStats[playerIdSt] = new PlayerLifeStats { KillsLife = 0, DamageDealedLife = 0 };
+
+        if (Config.Database.Enabled)
+        {
+            _dbHelper.CreateRow(id, nickname);
+        }
+    }
+
+    private void OnVerified(VerifiedEventArgs ev)
+    {
+        if (!Config.Stats.Enabled || !Config.Database.Enabled)
+            return;
+
+        _dbHelper.CreateRow(ev.Player.UserId, ev.Player.Nickname);
+        if (!_roundStarted)
+            StartHintCoroutine(ev.Player);
+    }
+
+    private void OnLeft(LeftEventArgs ev)
+    {
+        if (_hintCoroutines.TryGetValue(ev.Player.UserId, out var handle))
+        {
+            Timing.KillCoroutines(handle);
+            _hintCoroutines.Remove(ev.Player.UserId);
+        }
+    }
+
+    private void OnWaitingForPlayers()
+    {
+        _roundStarted = false;
+        foreach (var player in Exiled.API.Features.Player.List)
+        {
+            if (Config.Database.Enabled)
+                StartHintCoroutine(player);
+        }
     }
 
     private void OnRoundStarted()
     {
+        _roundStarted = true;
+        foreach (var handle in _hintCoroutines.Values)
+            Timing.KillCoroutines(handle);
+        _hintCoroutines.Clear();
+
         UnityEngine.Random.InitState((int)DateTime.UtcNow.Ticks);
         bool isScp3114Spawned = false;
         _warheadChanceCounter = 0;
@@ -289,6 +335,10 @@ public class Plugin : Plugin<Config>
 
     private void OnRoundEnd(RoundEndedEventArgs ev)
     {
+        foreach (var handle in _hintCoroutines.Values)
+            Timing.KillCoroutines(handle);
+        _hintCoroutines.Clear();
+
         ev.TimeToRestart = 15;
         Log.Info("Stopping coroutine");
         if (Config.Blackout.Enabled)
@@ -356,6 +406,10 @@ public class Plugin : Plugin<Config>
 
     private void OnRoundRestart()
     {
+        foreach (var handle in _hintCoroutines.Values)
+            Timing.KillCoroutines(handle);
+        _hintCoroutines.Clear();
+
         Log.Info("Stopping coroutine");
         if (Config.Blackout.Enabled)
         {
@@ -578,6 +632,38 @@ public class Plugin : Plugin<Config>
             }
 
             yield return Timing.WaitForSeconds(60f);
+        }
+    }
+
+    private void StartHintCoroutine(Exiled.API.Features.Player player)
+    {
+        if (string.IsNullOrEmpty(player.UserId) || _hintCoroutines.ContainsKey(player.UserId))
+            return;
+
+        if (_dbHelper == null)
+            return;
+
+        var stats = _dbHelper.GetStatsAsync(player.UserId).GetAwaiter().GetResult();
+        if (stats == null)
+            return;
+
+        string hint = $"<b>\u2022 Your Stats \u2022</b>\n" +
+                       $"Kills: <color=green>{stats.Kills}</color>\n" +
+                       $"Damage: <color=green>{stats.DamageDealed}</color>\n" +
+                       $"FF kills: <color=red>{stats.FFkills}</color>\n" +
+                       $"SCP kills: <color=green>{stats.SCPsKilled}</color>\n" +
+                       $"SCP items: <color=yellow>{stats.TakedSCPObjects}</color>\n" +
+                       $"Play time: <color=green>{stats.TimePlayed}</color>";
+
+        _hintCoroutines[player.UserId] = Timing.RunCoroutine(StatsHintCoroutine(player, hint));
+    }
+
+    private IEnumerator<float> StatsHintCoroutine(Exiled.API.Features.Player player, string text)
+    {
+        while (!_roundStarted && player.IsConnected)
+        {
+            player.ShowHint(text, 2f);
+            yield return Timing.WaitForSeconds(2f);
         }
     }
 
