@@ -1,7 +1,8 @@
-﻿using Exiled.API.Features;
+using Exiled.API.Features;
+using MySql.Data.MySqlClient;
+using System;
 
 namespace MaxunPlugin;
-using MySql.Data.MySqlClient;
 public class MyDatabaseHelper
 {
     private readonly string connectionString;
@@ -100,12 +101,12 @@ public class MyDatabaseHelper
             {
                 return new StoredPlayerStats
                 {
-                    Kills = reader.GetInt32("kills"),
-                    DamageDealed = reader.GetInt32("damageDealed"),
+                    Kills = Convert.ToInt32(reader["kills"]),
+                    DamageDealed = Convert.ToInt32(reader["damageDealed"]),
                     TimePlayed = reader["timePlayed"].ToString() ?? "0:00:00",
-                    FFkills = reader.GetInt32("FFkills"),
-                    TakedSCPObjects = reader.GetInt32("takedSCPObjects"),
-                    SCPsKilled = reader.GetInt32("SCPsKilled")
+                    FFkills = Convert.ToInt32(reader["FFkills"]),
+                    TakedSCPObjects = Convert.ToInt32(reader["takedSCPObjects"]),
+                    SCPsKilled = Convert.ToInt32(reader["SCPsKilled"])
                 };
             }
         }
