@@ -126,34 +126,48 @@ public class Plugin : Plugin<Config>
             ", нанесено урона: " + "<color=red>" + _playerLifeStats[playerIdSt].DamageDealedLife + "</color>");
         _playerLifeStats[playerIdSt].KillsLife = 0;
         _playerLifeStats[playerIdSt].DamageDealedLife = 0;
-        int attackerId = ev.Attacker.Id;
-
-        string attackerIdSt = Convert.ToString(attackerId);
-        if (playerId != attackerId)
+        if (ev.Attacker != null)
         {
-            _playerStats[attackerIdSt].Kills++;
-            _playerLifeStats[attackerIdSt].KillsLife++;
-        }
-
-        if (ev.Player.PreviousRole == RoleTypeId.Scp049 || ev.Player.PreviousRole == RoleTypeId.Scp079 ||
-            ev.Player.PreviousRole == RoleTypeId.Scp096 || ev.Player.PreviousRole == RoleTypeId.Scp106 ||
-            ev.Player.PreviousRole == RoleTypeId.Scp173 ||
-            ev.Player.PreviousRole == RoleTypeId.Scp939) _playerStats[attackerIdSt].SCPsKilled++;
-
-
-        if ((ev.Attacker.Role.Side == Side.ChaosInsurgency && (ev.Player.PreviousRole == RoleTypeId.ChaosConscript ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ChaosMarauder ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ChaosRepressor ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ChaosRifleman ||
-                                                               ev.Player.PreviousRole == RoleTypeId.ClassD)) ||
-            (ev.Attacker.Role.Side == Side.Mtf &&
-             (ev.Player.PreviousRole == RoleTypeId.NtfCaptain || ev.Player.PreviousRole == RoleTypeId.NtfPrivate ||
-              ev.Player.PreviousRole == RoleTypeId.NtfSergeant || ev.Player.PreviousRole == RoleTypeId.NtfSpecialist ||
-              ev.Player.PreviousRole == RoleTypeId.Scientist || ev.Player.PreviousRole == RoleTypeId.FacilityGuard)))
-        {
-            if (_playerStats[attackerIdSt].FFkills == -50)
+            int attackerId = ev.Attacker.Id;
+            string attackerIdSt = Convert.ToString(attackerId);
+            if (playerId != attackerId)
             {
-                _playerStats[attackerIdSt].FFkillsCount++;
+                _playerStats[attackerIdSt].Kills++;
+                _playerLifeStats[attackerIdSt].KillsLife++;
+            }
+            if ((ev.Player.PreviousRole == RoleTypeId.Scp049 || ev.Player.PreviousRole == RoleTypeId.Scp079 ||
+                 ev.Player.PreviousRole == RoleTypeId.Scp096 || ev.Player.PreviousRole == RoleTypeId.Scp106 ||
+                 ev.Player.PreviousRole == RoleTypeId.Scp173 ||
+                 ev.Player.PreviousRole == RoleTypeId.Scp939)) _playerStats[attackerIdSt].SCPsKilled++;
+            if ((ev.Attacker.Role.Side == Side.ChaosInsurgency && (ev.Player.PreviousRole == RoleTypeId.ChaosConscript ||
+                                                                   ev.Player.PreviousRole == RoleTypeId.ChaosMarauder ||
+                                                                   ev.Player.PreviousRole == RoleTypeId.ChaosRepressor ||
+                                                                   ev.Player.PreviousRole == RoleTypeId.ChaosRifleman ||
+                                                                   ev.Player.PreviousRole == RoleTypeId.ClassD)) ||
+                (ev.Attacker.Role.Side == Side.Mtf &&
+                 (ev.Player.PreviousRole == RoleTypeId.NtfCaptain || ev.Player.PreviousRole == RoleTypeId.NtfPrivate ||
+                  ev.Player.PreviousRole == RoleTypeId.NtfSergeant || ev.Player.PreviousRole == RoleTypeId.NtfSpecialist ||
+                  ev.Player.PreviousRole == RoleTypeId.Scientist || ev.Player.PreviousRole == RoleTypeId.FacilityGuard)))
+            {
+                if (_playerStats[attackerIdSt].FFkills == -50)
+                {
+                    _playerStats[attackerIdSt].FFkillsCount++;
+                    foreach (var player in Exiled.API.Features.Player.List)
+                        player.Broadcast(10,
+                            "<color=blue>" + ev.Attacker.Nickname + "</color>" + "<color=white> - </color>" +
+                            "<color=red>ДОЛБАЕБ</color><color=white>, и убил уже " + "<color=red>" +
+                            _playerStats[attackerIdSt].FFkillsCount + "</color>" + "<color=white> союзников</color>",
+                            Broadcast.BroadcastFlags.Normal, true);
+                }
+                else
+                {
+                    _playerStats[attackerIdSt].FFkills++;
+                    _playerStats[attackerIdSt].FFkillsCount++;
+                }
+            }
+            if (_playerStats[attackerIdSt].FFkills >= 3)
+            {
+                _playerStats[attackerIdSt].FFkills = -50;
                 foreach (var player in Exiled.API.Features.Player.List)
                     player.Broadcast(10,
                         "<color=blue>" + ev.Attacker.Nickname + "</color>" + "<color=white> - </color>" +
@@ -161,23 +175,6 @@ public class Plugin : Plugin<Config>
                         _playerStats[attackerIdSt].FFkillsCount + "</color>" + "<color=white> союзников</color>",
                         Broadcast.BroadcastFlags.Normal, true);
             }
-            else
-            {
-                _playerStats[attackerIdSt].FFkills++;
-                _playerStats[attackerIdSt].FFkillsCount++;
-            }
-        }
-
-
-        if (_playerStats[attackerIdSt].FFkills >= 3)
-        {
-            _playerStats[attackerIdSt].FFkills = -50;
-            foreach (var player in Exiled.API.Features.Player.List)
-                player.Broadcast(10,
-                    "<color=blue>" + ev.Attacker.Nickname + "</color>" + "<color=white> - </color>" +
-                    "<color=red>ДОЛБАЕБ</color><color=white>, и убил уже " + "<color=red>" +
-                    _playerStats[attackerIdSt].FFkillsCount + "</color>" + "<color=white> союзников</color>",
-                    Broadcast.BroadcastFlags.Normal, true);
         }
     }
 
@@ -185,17 +182,21 @@ public class Plugin : Plugin<Config>
     {
         if (!Config.Stats.Enabled)
             return;
-
-        float damageDealed = ev.Amount;
-        int damageDealedInt = Convert.ToInt32(damageDealed);
-        int playerid = ev.Attacker.Id;
-        string playerIdSt = Convert.ToString(playerid);
-        if (ev.Attacker.Id != ev.Player.Id)
+        if (ev.Attacker != null)
         {
-            _playerStats[playerIdSt].DamageDealed = damageDealedInt + _playerStats[playerIdSt].DamageDealed;
-            _playerLifeStats[playerIdSt].DamageDealedLife =
-                damageDealedInt + _playerLifeStats[playerIdSt].DamageDealedLife;
+            float damageDealed = ev.Amount;
+            int damageDealedInt = Convert.ToInt32(damageDealed);
+            int playerid = ev.Attacker.Id;
+            string playerIdSt = Convert.ToString(playerid);
+            if (ev.Attacker.Id != ev.Player.Id)
+            {
+                _playerStats[playerIdSt].DamageDealed = damageDealedInt + _playerStats[playerIdSt].DamageDealed;
+                _playerLifeStats[playerIdSt].DamageDealedLife =
+                    damageDealedInt + _playerLifeStats[playerIdSt].DamageDealedLife;
+            }
         }
+
+        
     }
 
     private void OnJoined(JoinedEventArgs ev)
@@ -220,24 +221,31 @@ public class Plugin : Plugin<Config>
         _warheadChanceCounter = 0;
         foreach (var player in Exiled.API.Features.Player.List)
         {
-            
+
             
             string id = player.UserId;
             string nickname = player.Nickname;
             int nonId = player.Id;
             Log.Warn(id + nickname + nonId);
-            if (Config.Scp3114 && !isScp3114Spawned)
+            if (player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||
+                player.Role == RoleTypeId.Scp079 || player.Role == RoleTypeId.Scp096 ||
+                player.Role == RoleTypeId.Scp106 || player.Role == RoleTypeId.Scp173 ||
+                player.Role == RoleTypeId.Scp939)
             {
-                int chanceTo3114 = Random.Range(1, 101);
-                if ((chanceTo3114 <= Config.Scp3114Chance) && (player.Role == RoleTypeId.Scp049 || player.Role == RoleTypeId.Scp0492 ||
-                    player.Role == RoleTypeId.Scp079 || player.Role == RoleTypeId.Scp096 ||
-                    player.Role == RoleTypeId.Scp106 || player.Role == RoleTypeId.Scp173 ||
-                    player.Role == RoleTypeId.Scp939))
+                if (Config.Scp3114 && !isScp3114Spawned)
                 {
-                    player.RoleManager.ServerSetRole(RoleTypeId.Scp3114, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.All);
-                    isScp3114Spawned = true;
+                    int chanceTo3114 = Random.Range(1, 101);
+                    if ((chanceTo3114 <= Config.Scp3114Chance))
+                    {
+                        player.RoleManager.ServerSetRole(RoleTypeId.Scp3114, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.All);
+                        isScp3114Spawned = true;
+                    }
                 }
+                
+                
+                
             }
+            
             if (Config.Database.Enabled)
                 _dbHelper.CreateRow(id, nickname);
 
@@ -422,6 +430,38 @@ public class Plugin : Plugin<Config>
 
     private void PlayerSpawned(SpawnedEventArgs ev)
     {
+        if (ev.Player.IsScp)
+        {
+            var scpType = ev.Player.Role.Type;
+            switch (scpType)
+            {
+                case RoleTypeId.Scp049:
+                    ev.Player.MaxHealth = 1600;
+                    ev.Player.Health = ev.Player.MaxHealth;
+                    break;
+                case RoleTypeId.Scp096:
+                    ev.Player.MaxHealth = 1800;
+                    ev.Player.Health = ev.Player.MaxHealth;
+                    break;
+                case RoleTypeId.Scp106:
+                    ev.Player.MaxHealth = 1800;
+                    ev.Player.Health = ev.Player.MaxHealth;
+                    break;
+                case RoleTypeId.Scp173:
+                    ev.Player.MaxHealth = 2500;
+                    ev.Player.Health = ev.Player.MaxHealth;
+                    break;
+                case RoleTypeId.Scp939:
+                    ev.Player.MaxHealth = 2000;
+                    ev.Player.Health = ev.Player.MaxHealth;
+                    break;
+                case RoleTypeId.Scp3114:
+                    ev.Player.MaxHealth = 700;
+                    ev.Player.Health = ev.Player.MaxHealth;
+                    break;
+                        
+            }
+        }
         if (ev.Player.IsCHI)
         {
             ev.Player.AddItem(ItemType.Radio);
