@@ -136,7 +136,7 @@ namespace MaxunPlugin
             _writer = null;
         }
 
-        private void Write(string category, string sub, string message)
+        public void Write(string category, string sub, string message)
         {
             if (_writer == null) return;
             string ts = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz");

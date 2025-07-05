@@ -239,6 +239,7 @@ public class Plugin : Plugin<Config>
                     {
                         player.RoleManager.ServerSetRole(RoleTypeId.Scp3114, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.All);
                         isScp3114Spawned = true;
+                        _roundLogger.Write("Player List", "Round", nickname + " respawned as " + player.Role.Type);
                     }
                 }
                 
@@ -432,6 +433,7 @@ public class Plugin : Plugin<Config>
     {
         if (ev.Player.IsScp)
         {
+            _roundLogger.Write("Player List", "Round", ev.Player.Nickname + " respawned as " + ev.Player.Role.Type);
             var scpType = ev.Player.Role.Type;
             switch (scpType)
             {
