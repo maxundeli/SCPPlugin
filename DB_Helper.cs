@@ -84,4 +84,47 @@ public class MyDatabaseHelper
             throw;
         }
     }
+
+    public async Task<StoredPlayerStats?> GetStatsAsync(string id)
+    {
+        using var conn = new MySqlConnection(connectionString);
+        try
+        {
+            await conn.OpenAsync();
+            var cmd = new MySqlCommand(
+                "SELECT kills, damageDealed, timePlayed, FFkills, takedSCPObjects, SCPsKilled FROM scp_stat WHERE ID = @id;",
+                conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new StoredPlayerStats
+                {
+                    Kills = reader.GetInt32("kills"),
+                    DamageDealed = reader.GetInt32("damageDealed"),
+                    TimePlayed = reader["timePlayed"].ToString() ?? "0:00:00",
+                    FFkills = reader.GetInt32("FFkills"),
+                    TakedSCPObjects = reader.GetInt32("takedSCPObjects"),
+                    SCPsKilled = reader.GetInt32("SCPsKilled")
+                };
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e);
+            throw;
+        }
+
+        return null;
+    }
+}
+
+public class StoredPlayerStats
+{
+    public int Kills { get; set; }
+    public int DamageDealed { get; set; }
+    public string TimePlayed { get; set; } = string.Empty;
+    public int FFkills { get; set; }
+    public int TakedSCPObjects { get; set; }
+    public int SCPsKilled { get; set; }
 }
