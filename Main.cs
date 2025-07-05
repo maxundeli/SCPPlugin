@@ -20,6 +20,7 @@ using Player = Exiled.Events.Handlers.Player;
 using Random = UnityEngine.Random;
 using Server = Exiled.Events.Handlers.Server;
 using Warhead = Exiled.API.Features.Warhead;
+using System.Threading.Tasks;
 
 namespace MaxunPlugin;
 
@@ -39,6 +40,8 @@ public class Plugin : Plugin<Config>
     private int _warheadChanceCounter;
     private CoroutineHandle _warheadCoroutine;
     private RoundLogger _roundLogger;
+    private readonly Dictionary<int, CoroutineHandle> _statsHintCoroutines = new();
+    private bool _waitingForPlayers;
 
     public override string Name => "MaxunPlugin";
     public override string Author => "maxundeli";
@@ -72,6 +75,7 @@ public class Plugin : Plugin<Config>
         Player.Spawned += PlayerSpawned;
         Player.ActivatingGenerator += BeforeActGenerator;
         Player.PickingUpItem += pickingUpItem;
+        Server.WaitingForPlayers += OnWaitingForPlayers;
 
         base.OnEnabled();
         Log.Info("Plugin enabled!");
@@ -94,6 +98,10 @@ public class Plugin : Plugin<Config>
         Exiled.Events.Handlers.Map.GeneratorActivating -= GeneratorAct;
         Player.PickingUpItem -= pickingUpItem;
         Player.ActivatingGenerator -= BeforeActGenerator;
+        Server.WaitingForPlayers -= OnWaitingForPlayers;
+        foreach (var handle in _statsHintCoroutines.Values)
+            Timing.KillCoroutines(handle);
+        _statsHintCoroutines.Clear();
         base.OnDisabled();
         Log.Info("Plugin disabled!");
     }
@@ -212,10 +220,19 @@ public class Plugin : Plugin<Config>
         string playerIdSt = Convert.ToString(playerId);
         _playerStats[playerIdSt] = new PlayerStats { Kills = 0, DamageDealed = 0, FFkills = 0 };
         _playerLifeStats[playerIdSt] = new PlayerLifeStats { KillsLife = 0, DamageDealedLife = 0 };
+
+        if (_waitingForPlayers)
+        {
+            StartStatsHint(ev.Player);
+        }
     }
 
     private void OnRoundStarted()
     {
+        _waitingForPlayers = false;
+        foreach (var handle in _statsHintCoroutines.Values)
+            Timing.KillCoroutines(handle);
+        _statsHintCoroutines.Clear();
         UnityEngine.Random.InitState((int)DateTime.UtcNow.Ticks);
         bool isScp3114Spawned = false;
         _warheadChanceCounter = 0;
@@ -578,6 +595,43 @@ public class Plugin : Plugin<Config>
             }
 
             yield return Timing.WaitForSeconds(60f);
+        }
+    }
+
+    private void OnWaitingForPlayers()
+    {
+        _waitingForPlayers = true;
+        foreach (var pl in Exiled.API.Features.Player.List)
+        {
+            StartStatsHint(pl);
+        }
+    }
+
+    private async void StartStatsHint(Exiled.API.Features.Player player)
+    {
+        if (!Config.Database.Enabled)
+            return;
+        var stats = await _dbHelper.GetStats(player.UserId);
+        if (stats == null)
+            return;
+        if (_statsHintCoroutines.TryGetValue(player.Id, out var existing))
+            Timing.KillCoroutines(existing);
+        var handle = Timing.RunCoroutine(StatsHintCoroutine(player, stats));
+        _statsHintCoroutines[player.Id] = handle;
+    }
+
+    private IEnumerator<float> StatsHintCoroutine(Exiled.API.Features.Player player, PlayerDbStats stats)
+    {
+        string text = $"<b><color=yellow>{player.Nickname}</color></b>\n" +
+                      $"Kills: <color=red>{stats.Kills}</color> | FF: <color=red>{stats.FFkills}</color>\n" +
+                      $"Damage: <color=red>{stats.DamageDealed}</color>\n" +
+                      $"SCP objects: <color=red>{stats.TakedSCPObjects}</color>\n" +
+                      $"SCPs killed: <color=red>{stats.SCPsKilled}</color>\n" +
+                      $"Time: <color=green>{stats.TimePlayed:hh\\:mm\\:ss}</color>";
+        while (_waitingForPlayers)
+        {
+            player.ShowHint(text, 1.1f);
+            yield return Timing.WaitForSeconds(1f);
         }
     }
 
