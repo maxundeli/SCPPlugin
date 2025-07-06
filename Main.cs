@@ -253,7 +253,7 @@ public class Plugin : Plugin<Config>
 
             if (Config.Stats.Enabled && Config.Database.Enabled)
             {
-                _ = ShowPlayerStatsAsync(player, id);
+                _ = ShowPlayerStatsAsync(player, id, true);
             }
 
             if (Config.SpawnItems.TryGetValue(player.Role, out var spawnList))
@@ -374,9 +374,10 @@ public class Plugin : Plugin<Config>
             Timing.KillCoroutines(_warheadCoroutine);
     }
 
-    private async Task ShowPlayerStatsAsync(Exiled.API.Features.Player player, string id)
+    public async Task ShowPlayerStatsAsync(Exiled.API.Features.Player player, string id, bool withDelay = false)
     {
-        await Task.Delay(TimeSpan.FromSeconds(15));
+        if (withDelay)
+            await Task.Delay(TimeSpan.FromSeconds(15));
 
         var dbStats = await _dbHelper.GetPlayerStatsAsync(id);
         var killsRank = await _dbHelper.GetStatRankAsync(id, "kills");
