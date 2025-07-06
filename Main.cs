@@ -377,12 +377,39 @@ public class Plugin : Plugin<Config>
     private async Task ShowPlayerStatsAsync(Exiled.API.Features.Player player, string id)
     {
         await Task.Delay(TimeSpan.FromSeconds(15));
+
         var dbStats = await _dbHelper.GetPlayerStatsAsync(id);
+        var killsRank = await _dbHelper.GetStatRankAsync(id, "kills");
+        var damageRank = await _dbHelper.GetStatRankAsync(id, "damageDealed");
+        var ffRank = await _dbHelper.GetStatRankAsync(id, "FFkills");
+        var scpKillsRank = await _dbHelper.GetStatRankAsync(id, "SCPsKilled");
+        var scpItemsRank = await _dbHelper.GetStatRankAsync(id, "takedSCPObjects");
+
         string hint = "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                     "<size=20>Kills: <color=red>" + dbStats.Kills + "</color>  Damage: <color=red>" + dbStats.DamageDealed + "</color></size>\n" +
-                     "<size=20>FF kills: <color=red>" + dbStats.FFkills + "</color>  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color></size>\n" +
-                     "<size=20>SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
+                     "<size=20>Kills: <color=red>" + dbStats.Kills + "</color>" + FormatRank(killsRank) +
+                     "  Damage: <color=red>" + dbStats.DamageDealed + "</color>" + FormatRank(damageRank) + "</size>\n" +
+                     "<size=20>FF kills: <color=red>" + dbStats.FFkills + "</color>" + FormatRank(ffRank) +
+                     "  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color>" + FormatRank(scpKillsRank) + "</size>\n" +
+                     "<size=20>SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>" + FormatRank(scpItemsRank) +
+                     "  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
+
         player.ShowHint(hint, 7f);
+    }
+
+    private static string FormatRank(int? rank)
+    {
+        if (!rank.HasValue || rank.Value > 3)
+            return string.Empty;
+
+        string color = rank.Value switch
+        {
+            1 => "#FFD700",
+            2 => "#C0C0C0",
+            3 => "#CD7F32",
+            _ => "white"
+        };
+
+        return $" <color={color}>★{rank.Value}★</color>";
     }
 
 
