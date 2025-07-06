@@ -114,6 +114,35 @@ public class MyDatabaseHelper
 
         return stats;
     }
+
+    public async Task<int?> GetStatRankAsync(string id, string column)
+    {
+        using var conn = new MySqlConnection(connectionString);
+        try
+        {
+            await conn.OpenAsync();
+
+            var getValueCmd = new MySqlCommand($"SELECT `{column}` FROM scp_stat WHERE ID = @id;", conn);
+            getValueCmd.Parameters.AddWithValue("@id", id);
+            object? valueObj = await getValueCmd.ExecuteScalarAsync();
+
+            if (valueObj == null || valueObj == DBNull.Value)
+                return null;
+
+            int value = Convert.ToInt32(valueObj);
+
+            var rankCmd = new MySqlCommand($"SELECT COUNT(*) + 1 FROM scp_stat WHERE `{column}` > @value;", conn);
+            rankCmd.Parameters.AddWithValue("@value", value);
+            object? rankObj = await rankCmd.ExecuteScalarAsync();
+
+            return Convert.ToInt32(rankObj);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e);
+            return null;
+        }
+    }
 }
 
 public class DbPlayerStats
