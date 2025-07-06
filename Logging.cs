@@ -9,6 +9,7 @@ using Exiled.Events.EventArgs.Server;
 using Exiled.Events.EventArgs.Map;
 using Exiled.Events.EventArgs.Scp096;
 using Exiled.Events.EventArgs.Warhead;
+using Exiled.Events.EventArgs.Cassie;
 using Exiled.Events.Handlers;
 using Map = Exiled.Events.Handlers.Map;
 using Player = Exiled.Events.Handlers.Player;
@@ -67,6 +68,13 @@ namespace MaxunPlugin
             Player.DroppedAmmo += OnDroppedAmmo;
             Player.ThrownProjectile += OnThrownProjectile;
             Player.Escaping += OnEscaping;
+            Player.SendingCommand += OnSendingCommand;
+            Player.Kicking += OnKicking;
+            Player.Kicked += OnKicked;
+            Player.Banning += OnBanning;
+            Player.Banned += OnBanned;
+
+            Cassie.SendingCassieMessage += OnCassieMessage;
 
             Map.GeneratorActivating += OnGeneratorActivating;
             Map.Decontaminating += OnDecontaminating;
@@ -112,6 +120,13 @@ namespace MaxunPlugin
             Player.DroppedAmmo -= OnDroppedAmmo;
             Player.ThrownProjectile -= OnThrownProjectile;
             Player.Escaping -= OnEscaping;
+            Player.SendingCommand -= OnSendingCommand;
+            Player.Kicking -= OnKicking;
+            Player.Kicked -= OnKicked;
+            Player.Banning -= OnBanning;
+            Player.Banned -= OnBanned;
+
+            Cassie.SendingCassieMessage -= OnCassieMessage;
 
             Map.GeneratorActivating -= OnGeneratorActivating;
             Map.Decontaminating -= OnDecontaminating;
@@ -389,6 +404,36 @@ namespace MaxunPlugin
         private void OnEscaping(EscapingEventArgs ev)
         {
             Write("Game Event", "Escape", ev.Player.Nickname + " escaped as " + ev.NewRole + " scenario " + ev.EscapeScenario);
+        }
+
+        private void OnSendingCommand(SendingCommandEventArgs ev)
+        {
+            Write("Admin Action", "Command", $"{ev.Player.Nickname} executed '{ev.Query}'");
+        }
+
+        private void OnKicking(KickingEventArgs ev)
+        {
+            Write("Admin Action", "Kick", $"{ev.Player.Nickname} kicked {ev.Target.Nickname} reason {ev.Reason}");
+        }
+
+        private void OnKicked(KickedEventArgs ev)
+        {
+            Write("Admin Action", "Kick", $"{ev.Player.Nickname} was kicked reason {ev.Reason}");
+        }
+
+        private void OnBanning(BanningEventArgs ev)
+        {
+            Write("Admin Action", "Ban", $"{ev.Player.Nickname} banned {ev.Target.Nickname} for {ev.Duration}s reason {ev.Reason}");
+        }
+
+        private void OnBanned(BannedEventArgs ev)
+        {
+            Write("Admin Action", "Ban", $"{ev.Player.Nickname} banned {ev.Target.Nickname} for {ev.Details.Duration}s reason {ev.Details.Reason}");
+        }
+
+        private void OnCassieMessage(SendingCassieMessageEventArgs ev)
+        {
+            Write("Admin Action", "Cassie", $"Message: {ev.Words}");
         }
 
         private bool TryAggregateDamage(HurtEventArgs ev)
