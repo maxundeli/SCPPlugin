@@ -14,6 +14,7 @@ using MySql.Data.MySqlClient;
 using PlayerRoles;
 using UnityEngine;
 using Cassie = Exiled.API.Features.Cassie;
+using System.Threading.Tasks;
 // библиотека корутин
 using Map = Exiled.API.Features.Map;
 using Player = Exiled.Events.Handlers.Player;
@@ -214,7 +215,7 @@ public class Plugin : Plugin<Config>
         _playerLifeStats[playerIdSt] = new PlayerLifeStats { KillsLife = 0, DamageDealedLife = 0 };
     }
 
-    private void OnRoundStarted()
+    private async void OnRoundStarted()
     {
         UnityEngine.Random.InitState((int)DateTime.UtcNow.Ticks);
         bool isScp3114Spawned = false;
@@ -249,6 +250,11 @@ public class Plugin : Plugin<Config>
             
             if (Config.Database.Enabled)
                 _dbHelper.CreateRow(id, nickname);
+
+            if (Config.Stats.Enabled && Config.Database.Enabled)
+            {
+                _ = ShowPlayerStatsAsync(player, id);
+            }
 
             if (Config.SpawnItems.TryGetValue(player.Role, out var spawnList))
             {
@@ -366,6 +372,45 @@ public class Plugin : Plugin<Config>
 
         if (Config.AutoBomb.Enabled)
             Timing.KillCoroutines(_warheadCoroutine);
+    }
+
+    private async Task ShowPlayerStatsAsync(Exiled.API.Features.Player player, string id)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(15));
+
+        var dbStats = await _dbHelper.GetPlayerStatsAsync(id);
+        var killsRank = await _dbHelper.GetStatRankAsync(id, "kills");
+        var damageRank = await _dbHelper.GetStatRankAsync(id, "damageDealed");
+        var ffRank = await _dbHelper.GetStatRankAsync(id, "FFkills");
+        var scpKillsRank = await _dbHelper.GetStatRankAsync(id, "SCPsKilled");
+        var scpItemsRank = await _dbHelper.GetStatRankAsync(id, "takedSCPObjects");
+
+        string hint =
+            "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
+            "<size=20>Kills: <color=red>"     + dbStats.Kills            + "</color>" + FormatRank(killsRank)      + "</size>\n" +
+            "<size=20>Damage: <color=red>"    + dbStats.DamageDealed     + "</color>" + FormatRank(damageRank)     + "</size>\n" +
+            "<size=20>FF kills: <color=red>"  + dbStats.FFkills          + "</color>" + FormatRank(ffRank)         + "</size>\n" +
+            "<size=20>SCP kills: <color=red>" + dbStats.ScpsKilled       + "</color>" + FormatRank(scpKillsRank)   + "</size>\n" +
+            "<size=20>SCP items: <color=red>" + dbStats.TakedSCPObjects  + "</color>" + FormatRank(scpItemsRank)   + "</size>\n" +
+            "<size=20>Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
+
+        player.ShowHint(hint, 7f);
+    }
+
+    private static string FormatRank(int? rank)
+    {
+        if (!rank.HasValue || rank.Value > 3)
+            return string.Empty;
+
+        string color = rank.Value switch
+        {
+            1 => "#FFD700",
+            2 => "#C0C0C0",
+            3 => "#CD7F32",
+            _ => "white"
+        };
+
+        return $" <color={color}>★{rank.Value}★</color>";
     }
 
 

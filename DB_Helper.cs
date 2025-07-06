@@ -84,4 +84,73 @@ public class MyDatabaseHelper
             throw;
         }
     }
+
+    public async Task<DbPlayerStats> GetPlayerStatsAsync(string id)
+    {
+        using var conn = new MySqlConnection(connectionString);
+        var stats = new DbPlayerStats();
+        try
+        {
+            await conn.OpenAsync();
+            var cmd = new MySqlCommand(
+                "SELECT kills, damageDealed, timePlayed, FFkills, takedSCPObjects, SCPsKilled FROM scp_stat WHERE ID = @id;",
+                conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                stats.Kills = reader.GetInt32(0);
+                stats.DamageDealed = reader.GetInt32(1);
+                stats.TimePlayed = reader.GetTimeSpan(2);
+                stats.FFkills = reader.GetInt32(3);
+                stats.TakedSCPObjects = reader.GetInt32(4);
+                stats.ScpsKilled = reader.GetInt32(5);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e);
+        }
+
+        return stats;
+    }
+
+    public async Task<int?> GetStatRankAsync(string id, string column)
+    {
+        using var conn = new MySqlConnection(connectionString);
+        try
+        {
+            await conn.OpenAsync();
+
+            var getValueCmd = new MySqlCommand($"SELECT `{column}` FROM scp_stat WHERE ID = @id;", conn);
+            getValueCmd.Parameters.AddWithValue("@id", id);
+            object? valueObj = await getValueCmd.ExecuteScalarAsync();
+
+            if (valueObj == null || valueObj == DBNull.Value)
+                return null;
+
+            int value = Convert.ToInt32(valueObj);
+
+            var rankCmd = new MySqlCommand($"SELECT COUNT(*) + 1 FROM scp_stat WHERE `{column}` > @value;", conn);
+            rankCmd.Parameters.AddWithValue("@value", value);
+            object? rankObj = await rankCmd.ExecuteScalarAsync();
+
+            return Convert.ToInt32(rankObj);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e);
+            return null;
+        }
+    }
+}
+
+public class DbPlayerStats
+{
+    public int Kills { get; set; }
+    public int DamageDealed { get; set; }
+    public TimeSpan TimePlayed { get; set; }
+    public int FFkills { get; set; }
+    public int TakedSCPObjects { get; set; }
+    public int ScpsKilled { get; set; }
 }
