@@ -378,10 +378,10 @@ public class Plugin : Plugin<Config>
     {
         await Task.Delay(TimeSpan.FromSeconds(15));
         var dbStats = await _dbHelper.GetPlayerStatsAsync(id);
-        string hint = "<b><color=#ffb84d>Statistics</color></b>\n" +
-                     "Kills: <color=red>" + dbStats.Kills + "</color>  Damage: <color=red>" + dbStats.DamageDealed + "</color>\n" +
-                     "FF kills: <color=red>" + dbStats.FFkills + "</color>  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color>\n" +
-                     "SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color>";
+        string hint = "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
+                     "<size=20>Kills: <color=red>" + dbStats.Kills + "</color>  Damage: <color=red>" + dbStats.DamageDealed + "</color></size>\n" +
+                     "<size=20>FF kills: <color=red>" + dbStats.FFkills + "</color>  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color></size>\n" +
+                     "<size=20>SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
         player.ShowHint(hint, 7f);
     }
 
