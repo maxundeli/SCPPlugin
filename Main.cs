@@ -376,6 +376,7 @@ public class Plugin : Plugin<Config>
 
     private async Task ShowPlayerStatsAsync(Exiled.API.Features.Player player, string id)
     {
+        await Task.Delay(TimeSpan.FromSeconds(15));
         var dbStats = await _dbHelper.GetPlayerStatsAsync(id);
         string hint = "<b><color=#ffb84d>Statistics</color></b>\n" +
                      "Kills: <color=red>" + dbStats.Kills + "</color>  Damage: <color=red>" + dbStats.DamageDealed + "</color>\n" +
