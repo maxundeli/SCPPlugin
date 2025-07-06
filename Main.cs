@@ -385,13 +385,14 @@ public class Plugin : Plugin<Config>
         var scpKillsRank = await _dbHelper.GetStatRankAsync(id, "SCPsKilled");
         var scpItemsRank = await _dbHelper.GetStatRankAsync(id, "takedSCPObjects");
 
-        string hint = "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                     "<size=20>Kills: <color=red>" + dbStats.Kills + "</color>" + FormatRank(killsRank) +
-                     "  Damage: <color=red>" + dbStats.DamageDealed + "</color>" + FormatRank(damageRank) + "</size>\n" +
-                     "<size=20>FF kills: <color=red>" + dbStats.FFkills + "</color>" + FormatRank(ffRank) +
-                     "  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color>" + FormatRank(scpKillsRank) + "</size>\n" +
-                     "<size=20>SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>" + FormatRank(scpItemsRank) +
-                     "  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
+        string hint =
+            "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
+            "<size=20>Kills: <color=red>"     + dbStats.Kills            + "</color>" + FormatRank(killsRank)      + "</size>\n" +
+            "<size=20>Damage: <color=red>"    + dbStats.DamageDealed     + "</color>" + FormatRank(damageRank)     + "</size>\n" +
+            "<size=20>FF kills: <color=red>"  + dbStats.FFkills          + "</color>" + FormatRank(ffRank)         + "</size>\n" +
+            "<size=20>SCP kills: <color=red>" + dbStats.ScpsKilled       + "</color>" + FormatRank(scpKillsRank)   + "</size>\n" +
+            "<size=20>SCP items: <color=red>" + dbStats.TakedSCPObjects  + "</color>" + FormatRank(scpItemsRank)   + "</size>\n" +
+            "<size=20>Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
         player.ShowHint(hint, 7f);
     }
