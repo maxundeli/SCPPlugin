@@ -14,6 +14,7 @@ using MySql.Data.MySqlClient;
 using PlayerRoles;
 using UnityEngine;
 using Cassie = Exiled.API.Features.Cassie;
+using System.Threading.Tasks;
 // библиотека корутин
 using Map = Exiled.API.Features.Map;
 using Player = Exiled.Events.Handlers.Player;
@@ -214,7 +215,7 @@ public class Plugin : Plugin<Config>
         _playerLifeStats[playerIdSt] = new PlayerLifeStats { KillsLife = 0, DamageDealedLife = 0 };
     }
 
-    private void OnRoundStarted()
+    private async void OnRoundStarted()
     {
         UnityEngine.Random.InitState((int)DateTime.UtcNow.Ticks);
         bool isScp3114Spawned = false;
@@ -252,12 +253,7 @@ public class Plugin : Plugin<Config>
 
             if (Config.Stats.Enabled && Config.Database.Enabled)
             {
-                var dbStats = _dbHelper.GetPlayerStatsAsync(id).GetAwaiter().GetResult();
-                string hint = "<b><color=#ffb84d>Statistics</color></b>\n" +
-                             "Kills: <color=red>" + dbStats.Kills + "</color>  Damage: <color=red>" + dbStats.DamageDealed + "</color>\n" +
-                             "FF kills: <color=red>" + dbStats.FFkills + "</color>  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color>\n" +
-                             "SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color>";
-                player.ShowHint(hint, 7f);
+                _ = ShowPlayerStatsAsync(player, id);
             }
 
             if (Config.SpawnItems.TryGetValue(player.Role, out var spawnList))
@@ -376,6 +372,16 @@ public class Plugin : Plugin<Config>
 
         if (Config.AutoBomb.Enabled)
             Timing.KillCoroutines(_warheadCoroutine);
+    }
+
+    private async Task ShowPlayerStatsAsync(Exiled.API.Features.Player player, string id)
+    {
+        var dbStats = await _dbHelper.GetPlayerStatsAsync(id);
+        string hint = "<b><color=#ffb84d>Statistics</color></b>\n" +
+                     "Kills: <color=red>" + dbStats.Kills + "</color>  Damage: <color=red>" + dbStats.DamageDealed + "</color>\n" +
+                     "FF kills: <color=red>" + dbStats.FFkills + "</color>  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color>\n" +
+                     "SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color>";
+        player.ShowHint(hint, 7f);
     }
 
 
