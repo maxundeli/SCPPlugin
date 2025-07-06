@@ -253,10 +253,10 @@ public class Plugin : Plugin<Config>
             if (Config.Stats.Enabled && Config.Database.Enabled)
             {
                 var dbStats = _dbHelper.GetPlayerStatsAsync(id).GetAwaiter().GetResult();
-                string hint = $"<b><color=#ffb84d>Statistics</color></b>\n" +
-                              $"Kills: <color=red>{dbStats.Kills}</color>  Damage: <color=red>{dbStats.DamageDealed}</color>\n" +
-                              $"FF kills: <color=red>{dbStats.FFkills}</color>  SCP kills: <color=red>{dbStats.ScpsKilled}</color>\n" +
-                              $"SCP items: <color=red>{dbStats.TakedSCPObjects}</color>  Playtime: <color=green>{dbStats.TimePlayed:hh\\:mm\\:ss}</color>";
+                string hint = "<b><color=#ffb84d>Statistics</color></b>\n" +
+                             "Kills: <color=red>" + dbStats.Kills + "</color>  Damage: <color=red>" + dbStats.DamageDealed + "</color>\n" +
+                             "FF kills: <color=red>" + dbStats.FFkills + "</color>  SCP kills: <color=red>" + dbStats.ScpsKilled + "</color>\n" +
+                             "SCP items: <color=red>" + dbStats.TakedSCPObjects + "</color>  Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color>";
                 player.ShowHint(hint, 7f);
             }
 

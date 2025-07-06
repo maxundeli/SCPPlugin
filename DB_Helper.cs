@@ -96,15 +96,15 @@ public class MyDatabaseHelper
                 "SELECT kills, damageDealed, timePlayed, FFkills, takedSCPObjects, SCPsKilled FROM scp_stat WHERE ID = @id;",
                 conn);
             cmd.Parameters.AddWithValue("@id", id);
-            using var reader = await cmd.ExecuteReaderAsync();
+            using var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                stats.Kills = reader.GetInt32("kills");
-                stats.DamageDealed = reader.GetInt32("damageDealed");
-                stats.TimePlayed = reader.GetTimeSpan("timePlayed");
-                stats.FFkills = reader.GetInt32("FFkills");
-                stats.TakedSCPObjects = reader.GetInt32("takedSCPObjects");
-                stats.ScpsKilled = reader.GetInt32("SCPsKilled");
+                stats.Kills = reader.GetInt32(0);
+                stats.DamageDealed = reader.GetInt32(1);
+                stats.TimePlayed = reader.GetTimeSpan(2);
+                stats.FFkills = reader.GetInt32(3);
+                stats.TakedSCPObjects = reader.GetInt32(4);
+                stats.ScpsKilled = reader.GetInt32(5);
             }
         }
         catch (Exception e)
