@@ -25,6 +25,8 @@ namespace MaxunPlugin
         private readonly Dictionary<int, DateTimeOffset> _teslaCooldown = new();
         private bool _deadmanLogged;
 
+        private const int DamageAggregateDelay = 5000;
+
         private readonly object _damageLock = new();
         private readonly Dictionary<string, DamageAggregate> _damageBuffer = new();
 
@@ -391,25 +393,22 @@ namespace MaxunPlugin
             Write("Game Event", "Escape", ev.Player.Nickname + " escaped as " + ev.NewRole + " scenario " + ev.EscapeScenario);
         }
 
-        private bool TryAggregateDamage(HurtEventArgs ev)
+        private string GetDamageSource(HurtEventArgs ev)
         {
             string typeName = ev.DamageHandler.Type.ToString();
-            bool isStrangled = string.Equals(typeName, "Strangled", StringComparison.OrdinalIgnoreCase);
-            bool isShotgun = false;
+            var handlerType = ev.DamageHandler.GetType();
+            var prop = handlerType.GetProperty("WeaponType") ?? handlerType.GetProperty("FirearmType");
+            string? weaponName = prop?.GetValue(ev.DamageHandler)?.ToString();
+            return string.IsNullOrEmpty(weaponName) ? typeName : weaponName;
+        }
 
-            if (ev.DamageHandler.GetType().Name.Contains("FirearmDamageHandler"))
-            {
-                var prop = ev.DamageHandler.GetType().GetProperty("WeaponType") ?? ev.DamageHandler.GetType().GetProperty("FirearmType");
-                string? weaponName = prop?.GetValue(ev.DamageHandler)?.ToString();
-                if (!string.IsNullOrEmpty(weaponName) && weaponName.Contains("Shotgun"))
-                    isShotgun = true;
-            }
-
-            if (!isStrangled && !isShotgun)
+        private bool TryAggregateDamage(HurtEventArgs ev)
+        {
+            if (ev.Attacker == null)
                 return false;
 
-            double delay = isStrangled ? 1000 : 100;
-            string key = $"{ev.Attacker.Id}-{ev.Player.Id}-{typeName}";
+            string source = GetDamageSource(ev);
+            string key = $"{ev.Attacker.Id}-{ev.Player.Id}-{source}";
 
             lock (_damageLock)
             {
@@ -419,16 +418,16 @@ namespace MaxunPlugin
                     {
                         Attacker = ev.Attacker.Nickname,
                         Target = ev.Player.Nickname,
-                        Type = typeName,
+                        Type = source,
                         Damage = ev.Amount,
-                        Timer = new Timer(_ => FlushDamage(key), null, (int)delay, Timeout.Infinite)
+                        Timer = new Timer(_ => FlushDamage(key), null, DamageAggregateDelay, Timeout.Infinite)
                     };
                     _damageBuffer[key] = data;
                 }
                 else
                 {
                     data.Damage += ev.Amount;
-                    data.Timer?.Change((int)delay, Timeout.Infinite);
+                    data.Timer?.Change(DamageAggregateDelay, Timeout.Infinite);
                 }
             }
 
