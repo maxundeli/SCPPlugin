@@ -25,7 +25,7 @@ namespace MaxunPlugin
         private readonly Dictionary<int, DateTimeOffset> _teslaCooldown = new();
         private bool _deadmanLogged;
 
-        private const int DamageAggregateDelay = 5000;
+        private const int DamageAggregateDelay = 3000;
 
         private readonly object _damageLock = new();
         private readonly Dictionary<string, DamageAggregate> _damageBuffer = new();
