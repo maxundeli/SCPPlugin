@@ -48,6 +48,8 @@ The resulting `MaxunPlugin.dll` will be in `bin/Release/net48`.
 3.  Copy all files from the `ExiledDependencies` folder to `.config/EXILED/Plugins/Dependencies`.
 4. Restart the server to generate a configuration file.
 
+The plugin creates the statistics tables automatically if they are missing.
+
 ## Configuration
 
 After first launch, edit `MaxunPlugin.yml` in the `Exiled/Configs` directory. Below is an example configuration with default values:
@@ -59,6 +61,8 @@ debug: false
 database:
   enabled: true
   connection_string: "Server=localhost;Database=scp_db;User ID=scp_user;Password=scp_password;Pooling=true;"
+  human_table: human_stats
+  scp_table: scp_stats
 
 blackout:
   enabled: true

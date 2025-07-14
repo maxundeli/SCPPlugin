@@ -75,6 +75,12 @@ namespace MaxunPlugin
         [Description("Connection string for the MySQL database.")]
         public string ConnectionString { get; set; } =
             "Server=localhost;Database=scp_db;User ID=scp_user;Password=scp_password;Pooling=true;";
+
+        [Description("Table name for human player statistics.")]
+        public string HumanTable { get; set; } = "human_stats";
+
+        [Description("Table name for SCP statistics.")]
+        public string ScpTable { get; set; } = "scp_stats";
     }
 
     public class BlackoutModule : ModuleBase
@@ -98,6 +104,14 @@ namespace MaxunPlugin
         
     public class StatsModule : ModuleBase
     {
+        [Description("Broadcast template when a player kills too many allies. {killer} - attacker, {victim} - victim, {count} - kill count")]
+        public string TeamkillMessage { get; set; } = "<color=blue>{killer}</color> <color=white>killed {victim}. Teamkills: <color=red>{count}</color>";
+
+        [Description("Enable broadcast on excessive teamkills.")]
+        public bool TeamkillBroadcast { get; set; } = true;
+
+        [Description("Teamkill threshold for broadcast.")]
+        public int TeamkillLimit { get; set; } = 3;
     }
 
     public class AutoBombModule : ModuleBase
