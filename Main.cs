@@ -54,8 +54,12 @@ public class Plugin : Plugin<Config>
         }
         if (Config.Database.Enabled)
         {
-            _dbHelper = new MyDatabaseHelper(Config.Database.ConnectionString);
+            _dbHelper = new MyDatabaseHelper(
+                Config.Database.ConnectionString,
+                Config.Database.HumanTable,
+                Config.Database.ScpTable);
             _dbHelper.TestConnectionAsync();
+            _dbHelper.EnsureTablesAsync().GetAwaiter().GetResult();
         }
 
         Player.Died += OnDie;
@@ -345,12 +349,12 @@ public class Plugin : Plugin<Config>
         if (player.Role.Side == Side.Scp)
         {
             var stats = await _dbHelper.GetScpStatsAsync(id);
-            var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", "scp_stats");
-            var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", "scp_stats");
-            var deathsRank = await _dbHelper.GetStatRankAsync(id, "deaths", "scp_stats");
-            var kills10Rank = await _dbHelper.GetStatRankAsync(id, "kills_10m", "scp_stats");
-            var dmg10Rank = await _dbHelper.GetStatRankAsync(id, "damage_10m", "scp_stats");
-            var deaths10Rank = await _dbHelper.GetStatRankAsync(id, "deaths_10m", "scp_stats");
+            var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", Config.Database.ScpTable);
+            var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", Config.Database.ScpTable);
+            var deathsRank = await _dbHelper.GetStatRankAsync(id, "deaths", Config.Database.ScpTable);
+            var kills10Rank = await _dbHelper.GetStatRankAsync(id, "kills_10m", Config.Database.ScpTable);
+            var dmg10Rank = await _dbHelper.GetStatRankAsync(id, "damage_10m", Config.Database.ScpTable);
+            var deaths10Rank = await _dbHelper.GetStatRankAsync(id, "deaths_10m", Config.Database.ScpTable);
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
@@ -364,13 +368,13 @@ public class Plugin : Plugin<Config>
         else
         {
             var stats = await _dbHelper.GetHumanStatsAsync(id);
-            var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", "human_stats");
-            var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", "human_stats");
-            var ffRank = await _dbHelper.GetStatRankAsync(id, "ff_kills", "human_stats");
-            var kills10Rank = await _dbHelper.GetStatRankAsync(id, "kills_10m", "human_stats");
-            var dmg10Rank = await _dbHelper.GetStatRankAsync(id, "damage_10m", "human_stats");
-            var ff10Rank = await _dbHelper.GetStatRankAsync(id, "ff_kills_10m", "human_stats");
-            var deaths10Rank = await _dbHelper.GetStatRankAsync(id, "deaths_10m", "human_stats");
+            var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", Config.Database.HumanTable);
+            var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", Config.Database.HumanTable);
+            var ffRank = await _dbHelper.GetStatRankAsync(id, "ff_kills", Config.Database.HumanTable);
+            var kills10Rank = await _dbHelper.GetStatRankAsync(id, "kills_10m", Config.Database.HumanTable);
+            var dmg10Rank = await _dbHelper.GetStatRankAsync(id, "damage_10m", Config.Database.HumanTable);
+            var ff10Rank = await _dbHelper.GetStatRankAsync(id, "ff_kills_10m", Config.Database.HumanTable);
+            var deaths10Rank = await _dbHelper.GetStatRankAsync(id, "deaths_10m", Config.Database.HumanTable);
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +

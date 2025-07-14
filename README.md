@@ -59,6 +59,8 @@ debug: false
 database:
   enabled: true
   connection_string: "Server=localhost;Database=scp_db;User ID=scp_user;Password=scp_password;Pooling=true;"
+  human_table: human_stats
+  scp_table: scp_stats
 
 blackout:
   enabled: true
