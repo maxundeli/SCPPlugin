@@ -66,7 +66,7 @@ public class Plugin : Plugin<Config>
         Player.Hurt += PlayerHurt;
         Server.RespawnedTeam += OnTeamRespawned;
         Server.RoundStarted += OnRoundStarted;
-        Player.Joined += OnJoined;
+        Player.Verified += OnVerified;
         Server.RoundEnded += OnRoundEnd;
         Server.RestartingRound += OnRoundRestart;
         Scp096.AddingTarget += RageStart;
@@ -87,7 +87,7 @@ public class Plugin : Plugin<Config>
         Player.Died -= OnDie;
         Player.Hurt -= PlayerHurt;
         Server.RoundStarted -= OnRoundStarted;
-        Player.Joined -= OnJoined;
+        Player.Verified -= OnVerified;
         Exiled.Events.Handlers.Warhead.DeadmanSwitchInitiating -= DeadmanS;
         Server.RoundEnded -= OnRoundEnd;
         Server.RestartingRound -= OnRoundRestart;
@@ -198,7 +198,7 @@ public class Plugin : Plugin<Config>
         
     }
 
-    private async void OnJoined(JoinedEventArgs ev)
+    private async void OnVerified(VerifiedEventArgs ev)
     {
         if (!Config.Stats.Enabled)
             return;
@@ -206,7 +206,7 @@ public class Plugin : Plugin<Config>
         string id = ev.Player.UserId;
         if (string.IsNullOrEmpty(id))
         {
-            Log.Warn("Joined event with empty user ID");
+            Log.Warn("Verified event with empty user ID");
             return;
         }
 
