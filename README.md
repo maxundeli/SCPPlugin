@@ -48,6 +48,8 @@ The resulting `MaxunPlugin.dll` will be in `bin/Release/net48`.
 3.  Copy all files from the `ExiledDependencies` folder to `.config/EXILED/Plugins/Dependencies`.
 4. Restart the server to generate a configuration file.
 
+The plugin creates the statistics tables automatically if they are missing.
+
 ## Configuration
 
 After first launch, edit `MaxunPlugin.yml` in the `Exiled/Configs` directory. Below is an example configuration with default values:

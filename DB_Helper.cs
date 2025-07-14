@@ -18,6 +18,20 @@ public class MyDatabaseHelper
         _scpTable = scpTable;
     }
 
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            await TestConnectionAsync();
+            await EnsureTablesAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Database initialization failed: {ex.Message}");
+            Log.Debug(ex.StackTrace);
+        }
+    }
+
     public async Task TestConnectionAsync()
     {
         using var conn = new MySqlConnection(_connectionString);
@@ -29,8 +43,10 @@ public class MyDatabaseHelper
 
     public async Task EnsureTablesAsync()
     {
+        Log.Info("Opening database connection...");
         using var conn = new MySqlConnection(_connectionString);
         await conn.OpenAsync();
+        Log.Info("Connection opened. Ensuring tables...");
 
         var humanCmd = new MySqlCommand($@"CREATE TABLE IF NOT EXISTS `{_humanTable}` (
             ID VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -53,6 +69,7 @@ public class MyDatabaseHelper
                 deaths_10m DOUBLE NOT NULL DEFAULT 0
             );", conn);
         await humanCmd.ExecuteNonQueryAsync();
+        Log.Info($"Ensured table '{_humanTable}'");
 
         var scpCmd = new MySqlCommand($@"CREATE TABLE IF NOT EXISTS `{_scpTable}` (
             ID VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -70,6 +87,7 @@ public class MyDatabaseHelper
                 deaths_10m DOUBLE NOT NULL DEFAULT 0
             );", conn);
         await scpCmd.ExecuteNonQueryAsync();
+        Log.Info($"Ensured table '{_scpTable}'");
     }
 
     public async Task CreateRow(string id, string nickname)

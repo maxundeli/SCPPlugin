@@ -58,8 +58,8 @@ public class Plugin : Plugin<Config>
                 Config.Database.ConnectionString,
                 Config.Database.HumanTable,
                 Config.Database.ScpTable);
-            _dbHelper.TestConnectionAsync();
-            _dbHelper.EnsureTablesAsync().GetAwaiter().GetResult();
+            Log.Info("Starting database initialization");
+            _ = _dbHelper.InitializeAsync();
         }
 
         Player.Died += OnDie;
