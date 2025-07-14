@@ -166,8 +166,7 @@ public class Plugin : Plugin<Config>
                             string msg = Config.Stats.TeamkillMessage.Replace("{killer}", ev.Attacker.Nickname)
                                 .Replace("{victim}", ev.Player.Nickname)
                                 .Replace("{count}", att.FFKills.ToString());
-                            foreach (var pl in Exiled.API.Features.Player.List)
-                                pl.Broadcast(10, msg, Broadcast.BroadcastFlags.Normal, true);
+                            Map.Broadcast(10, msg, Broadcast.BroadcastFlags.Normal, true);
                         }
                     }
                 }
