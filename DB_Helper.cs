@@ -201,6 +201,24 @@ public class HumanDbStats
     public int DamageToScp;
     public TimeSpan TimePlayed;
     public TimeSpan TimeAlive;
+
+    public HumanDbStats() { }
+
+    public HumanDbStats(Plugin.RoleStats r)
+    {
+        Damage = r.Damage;
+        Kills = r.Kills;
+        Deaths = r.Deaths;
+        DeathsFromScp = r.DeathsFromScp;
+        DeathsFromHuman = r.DeathsFromHuman;
+        ScpItems = r.ScpItems;
+        ScpsKilled = r.ScpsKilled;
+        FFKills = r.FFKills;
+        Escapes = r.Escapes;
+        DamageToScp = r.DamageToScp;
+        TimePlayed = r.TimePlayed;
+        TimeAlive = r.TimeAlive;
+    }
 }
 
 public class ScpDbStats
@@ -213,4 +231,18 @@ public class ScpDbStats
     public int DamageToScp;
     public TimeSpan TimePlayed;
     public TimeSpan TimeAlive;
+
+    public ScpDbStats() { }
+
+    public ScpDbStats(Plugin.RoleStats r)
+    {
+        Damage = r.Damage;
+        Kills = r.Kills;
+        Deaths = r.Deaths;
+        DeathsFromScp = r.DeathsFromScp;
+        DeathsFromHuman = r.DeathsFromHuman;
+        DamageToScp = r.DamageToScp;
+        TimePlayed = r.TimePlayed;
+        TimeAlive = r.TimeAlive;
+    }
 }

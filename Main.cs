@@ -317,9 +317,9 @@ public class Plugin : Plugin<Config>
             if (Config.Database.Enabled)
             {
                 if (stats.Human.TimePlayed > TimeSpan.Zero)
-                    _dbHelper.UpdateHumanStats(id, stats.Human);
+                    _dbHelper.UpdateHumanStats(id, new HumanDbStats(stats.Human));
                 if (stats.Scp.TimePlayed > TimeSpan.Zero)
-                    _dbHelper.UpdateScpStats(id, stats.Scp);
+                    _dbHelper.UpdateScpStats(id, new ScpDbStats(stats.Scp));
             }
         }
     }
@@ -351,9 +351,9 @@ public class Plugin : Plugin<Config>
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color></size>\n" +
-                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color></size>\n" +
-                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(deathsRank) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color> (10m)</size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color> (10m)</size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(deathsRank) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color> (10m)</size>\n" +
                 "<size=20>Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
             player.ShowHint(hint, 7f);
@@ -367,10 +367,10 @@ public class Plugin : Plugin<Config>
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color></size>\n" +
-                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color></size>\n" +
-                "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color></size>\n" +
-                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color> / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color> (10m)</size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color> (10m)</size>\n" +
+                "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color> (10m)</size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color> / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color> (10m)</size>\n" +
                 "<size=20>SCP kills: <color=red>" + stats.ScpsKilled + "</color> | Items: <color=red>" + stats.ScpItems + "</color></size>\n" +
                 "<size=20>Escapes: <color=red>" + stats.Escapes + "</color> | Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
