@@ -387,6 +387,9 @@ public class Plugin : Plugin<Config>
             var dmg10Rank = await _dbHelper.GetStatRankAsync(id, "damage_10m", Config.Database.HumanTable);
             var ff10Rank = await _dbHelper.GetStatRankAsync(id, "ff_kills_10m", Config.Database.HumanTable);
             var deaths10Rank = await _dbHelper.GetStatRankAsync(id, "deaths_10m", Config.Database.HumanTable);
+            var scpItemsRank = await _dbHelper.GetStatRankAsync(id, "scp_items", Config.Database.HumanTable);
+            var scpsKilledRank = await _dbHelper.GetStatRankAsync(id, "scps_killed", Config.Database.HumanTable);
+            var escapesRank = await _dbHelper.GetStatRankAsync(id, "escapes", Config.Database.HumanTable);
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
@@ -394,8 +397,10 @@ public class Plugin : Plugin<Config>
                 "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color>" + FormatRank(dmg10Rank) + " (10m)</size>\n" +
                 "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color>" + FormatRank(ff10Rank) + " (10m)</size>\n" +
                 "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(null) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color>" + FormatRank(deaths10Rank) + " (10m)</size>\n" +
-                "<size=20>SCP kills: <color=red>" + stats.ScpsKilled + "</color> | Items: <color=red>" + stats.ScpItems + "</color></size>\n" +
-                "<size=20>Escapes: <color=red>" + stats.Escapes + "</color> | Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
+                "<size=20>SCP kills: <color=red>" + stats.ScpsKilled + "</color>" + FormatRank(scpsKilledRank) +
+                " | Items: <color=red>" + stats.ScpItems + "</color>" + FormatRank(scpItemsRank) + "</size>\n" +
+                "<size=20>Escapes: <color=red>" + stats.Escapes + "</color>" + FormatRank(escapesRank) +
+                " | Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
             player.ShowHint(hint, 7f);
         }
