@@ -75,6 +75,7 @@ public class Plugin : Plugin<Config>
         Player.Spawned += PlayerSpawned;
         Player.ActivatingGenerator += BeforeActGenerator;
         Player.PickingUpItem += pickingUpItem;
+        Player.Escaping += OnEscaping;
 
         base.OnEnabled();
         Log.Info("Plugin enabled!");
@@ -97,6 +98,7 @@ public class Plugin : Plugin<Config>
         Exiled.Events.Handlers.Map.GeneratorActivating -= GeneratorAct;
         Player.PickingUpItem -= pickingUpItem;
         Player.ActivatingGenerator -= BeforeActGenerator;
+        Player.Escaping -= OnEscaping;
         base.OnDisabled();
         Log.Info("Plugin disabled!");
     }
@@ -195,7 +197,27 @@ public class Plugin : Plugin<Config>
                 rs.DamageToScp += dmg;
         }
 
-        
+
+    }
+
+    private void OnEscaping(EscapingEventArgs ev)
+    {
+        if (!Config.Stats.Enabled)
+            return;
+
+        string id = ev.Player.UserId;
+        if (_roundStats.TryGetValue(id, out var stats))
+        {
+            var roleStats = stats.CurrentIsScp ? stats.Scp : stats.Human;
+            roleStats.Escapes++;
+            if (!stats.IsSpectator)
+            {
+                float now = (float)Round.ElapsedTime.TotalSeconds;
+                roleStats.TimeAlive += TimeSpan.FromSeconds(now - stats.AliveStart);
+                roleStats.TimePlayed += TimeSpan.FromSeconds(now - stats.ActiveStart);
+                stats.IsSpectator = true;
+            }
+        }
     }
 
     private async void OnVerified(VerifiedEventArgs ev)
