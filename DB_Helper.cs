@@ -26,16 +26,16 @@ public class MyDatabaseHelper
         using var conn = new MySqlConnection(_connectionString);
         await conn.OpenAsync();
         var cmdHuman = new MySqlCommand(
-            "INSERT IGNORE INTO human_stats (ID,nickname,damage,kills,deaths,deaths_scp,deaths_human,scp_items,scps_killed,ff_kills,escapes,damage_to_scp,time_played,time_alive) " +
-            "VALUES (@id,@n,0,0,0,0,0,0,0,0,0,0,'00:00:00','00:00:00');",
+            "INSERT IGNORE INTO human_stats (ID,nickname,damage,kills,deaths,deaths_scp,deaths_human,scp_items,scps_killed,ff_kills,escapes,damage_to_scp,time_played,time_alive,damage_10m,kills_10m,ff_kills_10m,deaths_10m) " +
+            "VALUES (@id,@n,0,0,0,0,0,0,0,0,0,0,'00:00:00','00:00:00',0,0,0,0);",
             conn);
         cmdHuman.Parameters.AddWithValue("@id", id);
         cmdHuman.Parameters.AddWithValue("@n", nickname);
         await cmdHuman.ExecuteNonQueryAsync();
 
         var cmdScp = new MySqlCommand(
-            "INSERT IGNORE INTO scp_stats (ID,nickname,damage,kills,deaths,deaths_scp,deaths_human,damage_to_scp,time_played,time_alive) " +
-            "VALUES (@id,@n,0,0,0,0,0,0,'00:00:00','00:00:00');",
+            "INSERT IGNORE INTO scp_stats (ID,nickname,damage,kills,deaths,deaths_scp,deaths_human,damage_to_scp,time_played,time_alive,damage_10m,kills_10m,deaths_10m) " +
+            "VALUES (@id,@n,0,0,0,0,0,0,'00:00:00','00:00:00',0,0,0);",
             conn);
         cmdScp.Parameters.AddWithValue("@id", id);
         cmdScp.Parameters.AddWithValue("@n", nickname);
@@ -71,7 +71,11 @@ public class MyDatabaseHelper
                   escapes = escapes + @esc,
                   damage_to_scp = damage_to_scp + @dmgscp,
                   time_played = ADDTIME(time_played,@tp),
-                  time_alive = ADDTIME(time_alive,@ta)
+                  time_alive = ADDTIME(time_alive,@ta),
+                  damage_10m = (damage + @dmg) / (GREATEST(TIME_TO_SEC(ADDTIME(time_played,@tp)),1)/600),
+                  kills_10m = (kills + @k) / (GREATEST(TIME_TO_SEC(ADDTIME(time_played,@tp)),1)/600),
+                  ff_kills_10m = (ff_kills + @ff) / (GREATEST(TIME_TO_SEC(ADDTIME(time_played,@tp)),1)/600),
+                  deaths_10m = (deaths + @de) / (GREATEST(TIME_TO_SEC(ADDTIME(time_played,@tp)),1)/600)
               WHERE ID=@id;",
             conn);
         cmd.Parameters.AddWithValue("@dmg", s.Damage);
@@ -103,7 +107,10 @@ public class MyDatabaseHelper
                   deaths_human = deaths_human + @dhum,
                   damage_to_scp = damage_to_scp + @dmgscp,
                   time_played = ADDTIME(time_played,@tp),
-                  time_alive = ADDTIME(time_alive,@ta)
+                  time_alive = ADDTIME(time_alive,@ta),
+                  damage_10m = (damage + @dmg) / (GREATEST(TIME_TO_SEC(ADDTIME(time_played,@tp)),1)/600),
+                  kills_10m = (kills + @k) / (GREATEST(TIME_TO_SEC(ADDTIME(time_played,@tp)),1)/600),
+                  deaths_10m = (deaths + @de) / (GREATEST(TIME_TO_SEC(ADDTIME(time_played,@tp)),1)/600)
               WHERE ID=@id;",
             conn);
         cmd.Parameters.AddWithValue("@dmg", s.Damage);
@@ -124,7 +131,7 @@ public class MyDatabaseHelper
         var stats = new HumanDbStats();
         await conn.OpenAsync();
         var cmd = new MySqlCommand(
-            "SELECT damage,kills,deaths,deaths_scp,deaths_human,scp_items,scps_killed,ff_kills,escapes,damage_to_scp,time_played,time_alive FROM human_stats WHERE ID=@id;",
+            "SELECT damage,kills,deaths,deaths_scp,deaths_human,scp_items,scps_killed,ff_kills,escapes,damage_to_scp,time_played,time_alive,damage_10m,kills_10m,ff_kills_10m,deaths_10m FROM human_stats WHERE ID=@id;",
             conn);
         cmd.Parameters.AddWithValue("@id", id);
         using var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync();
@@ -142,6 +149,10 @@ public class MyDatabaseHelper
             stats.DamageToScp = reader.GetInt32(9);
             stats.TimePlayed = reader.GetTimeSpan(10);
             stats.TimeAlive = reader.GetTimeSpan(11);
+            stats.DamagePerTen = reader.GetDouble(12);
+            stats.KillsPerTen = reader.GetDouble(13);
+            stats.FFKillsPerTen = reader.GetDouble(14);
+            stats.DeathsPerTen = reader.GetDouble(15);
         }
         return stats;
     }
@@ -152,7 +163,7 @@ public class MyDatabaseHelper
         var stats = new ScpDbStats();
         await conn.OpenAsync();
         var cmd = new MySqlCommand(
-            "SELECT damage,kills,deaths,deaths_scp,deaths_human,damage_to_scp,time_played,time_alive FROM scp_stats WHERE ID=@id;",
+            "SELECT damage,kills,deaths,deaths_scp,deaths_human,damage_to_scp,time_played,time_alive,damage_10m,kills_10m,deaths_10m FROM scp_stats WHERE ID=@id;",
             conn);
         cmd.Parameters.AddWithValue("@id", id);
         using var reader = (MySqlDataReader)await cmd.ExecuteReaderAsync();
@@ -166,6 +177,9 @@ public class MyDatabaseHelper
             stats.DamageToScp = reader.GetInt32(5);
             stats.TimePlayed = reader.GetTimeSpan(6);
             stats.TimeAlive = reader.GetTimeSpan(7);
+            stats.DamagePerTen = reader.GetDouble(8);
+            stats.KillsPerTen = reader.GetDouble(9);
+            stats.DeathsPerTen = reader.GetDouble(10);
         }
         return stats;
     }
@@ -179,7 +193,7 @@ public class MyDatabaseHelper
         object? obj = await valCmd.ExecuteScalarAsync();
         if (obj == null || obj == DBNull.Value)
             return null;
-        int value = Convert.ToInt32(obj);
+        double value = Convert.ToDouble(obj);
         var rankCmd = new MySqlCommand($"SELECT COUNT(*) + 1 FROM {table} WHERE `{column}` > @v;", conn);
         rankCmd.Parameters.AddWithValue("@v", value);
         object? rankObj = await rankCmd.ExecuteScalarAsync();
@@ -201,6 +215,10 @@ public class HumanDbStats
     public int DamageToScp;
     public TimeSpan TimePlayed;
     public TimeSpan TimeAlive;
+    public double DamagePerTen;
+    public double KillsPerTen;
+    public double FFKillsPerTen;
+    public double DeathsPerTen;
 
     public HumanDbStats() { }
 
@@ -218,6 +236,10 @@ public class HumanDbStats
         DamageToScp = r.DamageToScp;
         TimePlayed = r.TimePlayed;
         TimeAlive = r.TimeAlive;
+        DamagePerTen = 0;
+        KillsPerTen = 0;
+        FFKillsPerTen = 0;
+        DeathsPerTen = 0;
     }
 }
 
@@ -231,6 +253,9 @@ public class ScpDbStats
     public int DamageToScp;
     public TimeSpan TimePlayed;
     public TimeSpan TimeAlive;
+    public double DamagePerTen;
+    public double KillsPerTen;
+    public double DeathsPerTen;
 
     public ScpDbStats() { }
 
@@ -244,5 +269,9 @@ public class ScpDbStats
         DamageToScp = r.DamageToScp;
         TimePlayed = r.TimePlayed;
         TimeAlive = r.TimeAlive;
+        DamagePerTen = 0;
+        KillsPerTen = 0;
+        DeathsPerTen = 0;
     }
 }
+

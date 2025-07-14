@@ -348,12 +348,15 @@ public class Plugin : Plugin<Config>
             var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", "scp_stats");
             var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", "scp_stats");
             var deathsRank = await _dbHelper.GetStatRankAsync(id, "deaths", "scp_stats");
+            var kills10Rank = await _dbHelper.GetStatRankAsync(id, "kills_10m", "scp_stats");
+            var dmg10Rank = await _dbHelper.GetStatRankAsync(id, "damage_10m", "scp_stats");
+            var deaths10Rank = await _dbHelper.GetStatRankAsync(id, "deaths_10m", "scp_stats");
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color> (10m)</size>\n" +
-                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color> (10m)</size>\n" +
-                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(deathsRank) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color> (10m)</size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color>" + FormatRank(kills10Rank) + " (10m)</size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color>" + FormatRank(dmg10Rank) + " (10m)</size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(deathsRank) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color>" + FormatRank(deaths10Rank) + " (10m)</size>\n" +
                 "<size=20>Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
             player.ShowHint(hint, 7f);
@@ -364,13 +367,17 @@ public class Plugin : Plugin<Config>
             var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", "human_stats");
             var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", "human_stats");
             var ffRank = await _dbHelper.GetStatRankAsync(id, "ff_kills", "human_stats");
+            var kills10Rank = await _dbHelper.GetStatRankAsync(id, "kills_10m", "human_stats");
+            var dmg10Rank = await _dbHelper.GetStatRankAsync(id, "damage_10m", "human_stats");
+            var ff10Rank = await _dbHelper.GetStatRankAsync(id, "ff_kills_10m", "human_stats");
+            var deaths10Rank = await _dbHelper.GetStatRankAsync(id, "deaths_10m", "human_stats");
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color> (10m)</size>\n" +
-                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color> (10m)</size>\n" +
-                "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color> (10m)</size>\n" +
-                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color> / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color> (10m)</size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color>" + FormatRank(kills10Rank) + " (10m)</size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color>" + FormatRank(dmg10Rank) + " (10m)</size>\n" +
+                "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color>" + FormatRank(ff10Rank) + " (10m)</size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(null) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color>" + FormatRank(deaths10Rank) + " (10m)</size>\n" +
                 "<size=20>SCP kills: <color=red>" + stats.ScpsKilled + "</color> | Items: <color=red>" + stats.ScpItems + "</color></size>\n" +
                 "<size=20>Escapes: <color=red>" + stats.Escapes + "</color> | Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
