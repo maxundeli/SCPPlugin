@@ -198,19 +198,25 @@ public class Plugin : Plugin<Config>
         
     }
 
-    private void OnJoined(JoinedEventArgs ev)
+    private async void OnJoined(JoinedEventArgs ev)
     {
         if (!Config.Stats.Enabled)
             return;
 
         string id = ev.Player.UserId;
+        if (string.IsNullOrEmpty(id))
+        {
+            Log.Warn("Joined event with empty user ID");
+            return;
+        }
+
         string nickname = ev.Player.Nickname;
         _roundStats[id] = new RoundPlayerStats();
 
         if (Config.Database.Enabled)
         {
-            _dbHelper.CreateRow(id, nickname);
-            _dbHelper.UpdateNickname(id, nickname);
+            await _dbHelper.CreateRow(id, nickname);
+            await _dbHelper.UpdateNickname(id, nickname);
         }
     }
 
@@ -248,7 +254,7 @@ public class Plugin : Plugin<Config>
             }
             
             if (Config.Database.Enabled)
-                _dbHelper.CreateRow(id, nickname);
+                await _dbHelper.CreateRow(id, nickname);
 
             if (Config.Stats.Enabled && Config.Database.Enabled)
             {
@@ -292,7 +298,7 @@ public class Plugin : Plugin<Config>
             _warheadCoroutine = Timing.RunCoroutine(WarheadCoroutine());
     }
 
-    private void OnRoundEnd(RoundEndedEventArgs ev)
+    private async void OnRoundEnd(RoundEndedEventArgs ev)
     {
         ev.TimeToRestart = 15;
         Log.Info("Stopping coroutine");
@@ -321,9 +327,15 @@ public class Plugin : Plugin<Config>
             if (Config.Database.Enabled)
             {
                 if (stats.Human.TimePlayed > TimeSpan.Zero)
-                    _dbHelper.UpdateHumanStats(id, new HumanDbStats(stats.Human));
+                {
+                    Log.Info($"Updating human stats for {id}");
+                    await _dbHelper.UpdateHumanStats(id, new HumanDbStats(stats.Human));
+                }
                 if (stats.Scp.TimePlayed > TimeSpan.Zero)
-                    _dbHelper.UpdateScpStats(id, new ScpDbStats(stats.Scp));
+                {
+                    Log.Info($"Updating SCP stats for {id}");
+                    await _dbHelper.UpdateScpStats(id, new ScpDbStats(stats.Scp));
+                }
             }
         }
     }
