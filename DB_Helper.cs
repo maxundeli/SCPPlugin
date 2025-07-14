@@ -293,7 +293,7 @@ public class HumanDbStats
 
     public HumanDbStats(Plugin.RoleStats r)
     {
-        Damage = r.Damage;
+        Damage = (int)Math.Round(r.Damage);
         Kills = r.Kills;
         Deaths = r.Deaths;
         DeathsFromScp = r.DeathsFromScp;
@@ -302,7 +302,7 @@ public class HumanDbStats
         ScpsKilled = r.ScpsKilled;
         FFKills = r.FFKills;
         Escapes = r.Escapes;
-        DamageToScp = r.DamageToScp;
+        DamageToScp = (int)Math.Round(r.DamageToScp);
         TimePlayed = r.TimePlayed;
         TimeAlive = r.TimeAlive;
         DamagePerTen = 0;
@@ -330,12 +330,12 @@ public class ScpDbStats
 
     public ScpDbStats(Plugin.RoleStats r)
     {
-        Damage = r.Damage;
+        Damage = (int)Math.Round(r.Damage);
         Kills = r.Kills;
         Deaths = r.Deaths;
         DeathsFromScp = r.DeathsFromScp;
         DeathsFromHuman = r.DeathsFromHuman;
-        DamageToScp = r.DamageToScp;
+        DamageToScp = (int)Math.Round(r.DamageToScp);
         TimePlayed = r.TimePlayed;
         TimeAlive = r.TimeAlive;
         DamagePerTen = 0;

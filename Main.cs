@@ -182,9 +182,9 @@ public class Plugin : Plugin<Config>
         if (ev.Attacker == null || ev.Attacker.Id == ev.Player.Id)
             return;
 
-        int dmg = (int)ev.Amount;
-        if (ev.Attacker.Role.Type == RoleTypeId.Scp173 && dmg < 0)
-            dmg = (int)ev.Player.MaxHealth;
+        float dmg = ev.Amount;
+        if (ev.Attacker.Role.Type == RoleTypeId.Scp173 && dmg < 0f)
+            dmg = ev.Player.MaxHealth;
 
         string attackerId = ev.Attacker.UserId;
         if (_roundStats.TryGetValue(attackerId, out var st))
@@ -652,8 +652,8 @@ public class Plugin : Plugin<Config>
 
 public class RoleStats
 {
-    public int Damage;
-    public int DamageToScp;
+    public float Damage;
+    public float DamageToScp;
     public int Kills;
     public int Deaths;
     public int DeathsFromScp;
