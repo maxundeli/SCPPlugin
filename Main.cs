@@ -28,9 +28,7 @@ public class Plugin : Plugin<Config>
 {
 
     public static Plugin Instance;
-    private readonly Dictionary<string, PlayerLifeStats> _playerLifeStats = new();
-
-    private readonly Dictionary<string, PlayerStats> _playerStats = new();
+    private readonly Dictionary<string, RoundPlayerStats> _roundStats = new();
     private MyDatabaseHelper _dbHelper;
     private CoroutineHandle _DeadManCoroutine;
     private int _generatorCount;
@@ -109,9 +107,9 @@ public class Plugin : Plugin<Config>
     {
         if (ev.Pickup.Category == ItemCategory.SCPItem)
         {
-            int playerID = ev.Player.Id;
-            string playerIDstr = playerID.ToString();
-            _playerStats[playerIDstr].takedSCPObjects++;
+            string id = ev.Player.Id.ToString();
+            if (_roundStats.TryGetValue(id, out var stats))
+                stats.Human.ScpItems++;
         }
     }
 
@@ -120,61 +118,55 @@ public class Plugin : Plugin<Config>
         if (!Config.Stats.Enabled)
             return;
 
-        int playerId = ev.Player.Id;
-        string playerIdSt = Convert.ToString(playerId);
-        ev.Player.Broadcast(7,
-            "За эту жизнь убито: " + "<color=red>" + _playerLifeStats[playerIdSt].KillsLife + "</color>" +
-            ", нанесено урона: " + "<color=red>" + _playerLifeStats[playerIdSt].DamageDealedLife + "</color>");
-        _playerLifeStats[playerIdSt].KillsLife = 0;
-        _playerLifeStats[playerIdSt].DamageDealedLife = 0;
+        string victimId = ev.Player.UserId;
+        if (_roundStats.TryGetValue(victimId, out var vStats))
+        {
+            var roleStats = vStats.CurrentIsScp ? vStats.Scp : vStats.Human;
+            roleStats.Deaths++;
+            if (ev.Attacker != null)
+            {
+                if (ev.Attacker.Role.Side == Side.Scp)
+                    roleStats.DeathsFromScp++;
+                else
+                    roleStats.DeathsFromHuman++;
+            }
+            if (!vStats.IsSpectator)
+            {
+                float now = (float)Round.ElapsedTime.TotalSeconds;
+                roleStats.TimeAlive += TimeSpan.FromSeconds(now - vStats.AliveStart);
+                roleStats.TimePlayed += TimeSpan.FromSeconds(now - vStats.ActiveStart);
+                vStats.IsSpectator = true;
+            }
+        }
+
         if (ev.Attacker != null)
         {
-            int attackerId = ev.Attacker.Id;
-            string attackerIdSt = Convert.ToString(attackerId);
-            if (playerId != attackerId)
+            string attackerId = ev.Attacker.UserId;
+            if (_roundStats.TryGetValue(attackerId, out var aStats))
             {
-                _playerStats[attackerIdSt].Kills++;
-                _playerLifeStats[attackerIdSt].KillsLife++;
-            }
-            if ((ev.Player.PreviousRole == RoleTypeId.Scp049 || ev.Player.PreviousRole == RoleTypeId.Scp079 ||
-                 ev.Player.PreviousRole == RoleTypeId.Scp096 || ev.Player.PreviousRole == RoleTypeId.Scp106 ||
-                 ev.Player.PreviousRole == RoleTypeId.Scp173 ||
-                 ev.Player.PreviousRole == RoleTypeId.Scp939)) _playerStats[attackerIdSt].SCPsKilled++;
-            if ((ev.Attacker.Role.Side == Side.ChaosInsurgency && (ev.Player.PreviousRole == RoleTypeId.ChaosConscript ||
-                                                                   ev.Player.PreviousRole == RoleTypeId.ChaosMarauder ||
-                                                                   ev.Player.PreviousRole == RoleTypeId.ChaosRepressor ||
-                                                                   ev.Player.PreviousRole == RoleTypeId.ChaosRifleman ||
-                                                                   ev.Player.PreviousRole == RoleTypeId.ClassD)) ||
-                (ev.Attacker.Role.Side == Side.Mtf &&
-                 (ev.Player.PreviousRole == RoleTypeId.NtfCaptain || ev.Player.PreviousRole == RoleTypeId.NtfPrivate ||
-                  ev.Player.PreviousRole == RoleTypeId.NtfSergeant || ev.Player.PreviousRole == RoleTypeId.NtfSpecialist ||
-                  ev.Player.PreviousRole == RoleTypeId.Scientist || ev.Player.PreviousRole == RoleTypeId.FacilityGuard)))
-            {
-                if (_playerStats[attackerIdSt].FFkills == -50)
+                var att = aStats.CurrentIsScp ? aStats.Scp : aStats.Human;
+                if (ev.Attacker != ev.Player)
+                    att.Kills++;
+
+                bool allyKill = ev.Attacker.Role.Team == ev.Player.Role.Team && ev.Attacker.Role.Side != Side.Scp;
+
+                if (!aStats.CurrentIsScp)
                 {
-                    _playerStats[attackerIdSt].FFkillsCount++;
-                    foreach (var player in Exiled.API.Features.Player.List)
-                        player.Broadcast(10,
-                            "<color=blue>" + ev.Attacker.Nickname + "</color>" + "<color=white> - </color>" +
-                            "<color=red>ДОЛБАЕБ</color><color=white>, и убил уже " + "<color=red>" +
-                            _playerStats[attackerIdSt].FFkillsCount + "</color>" + "<color=white> союзников</color>",
-                            Broadcast.BroadcastFlags.Normal, true);
+                    if (ev.Player.Role.Side == Side.Scp)
+                        att.ScpsKilled++;
+                    if (allyKill)
+                    {
+                        att.FFKills++;
+                        if (att.FFKills >= Config.Stats.TeamkillLimit && Config.Stats.TeamkillBroadcast)
+                        {
+                            string msg = Config.Stats.TeamkillMessage.Replace("{killer}", ev.Attacker.Nickname)
+                                .Replace("{victim}", ev.Player.Nickname)
+                                .Replace("{count}", att.FFKills.ToString());
+                            foreach (var pl in Exiled.API.Features.Player.List)
+                                pl.Broadcast(10, msg, Broadcast.BroadcastFlags.Normal, true);
+                        }
+                    }
                 }
-                else
-                {
-                    _playerStats[attackerIdSt].FFkills++;
-                    _playerStats[attackerIdSt].FFkillsCount++;
-                }
-            }
-            if (_playerStats[attackerIdSt].FFkills >= 3)
-            {
-                _playerStats[attackerIdSt].FFkills = -50;
-                foreach (var player in Exiled.API.Features.Player.List)
-                    player.Broadcast(10,
-                        "<color=blue>" + ev.Attacker.Nickname + "</color>" + "<color=white> - </color>" +
-                        "<color=red>ДОЛБАЕБ</color><color=white>, и убил уже " + "<color=red>" +
-                        _playerStats[attackerIdSt].FFkillsCount + "</color>" + "<color=white> союзников</color>",
-                        Broadcast.BroadcastFlags.Normal, true);
             }
         }
     }
@@ -183,18 +175,20 @@ public class Plugin : Plugin<Config>
     {
         if (!Config.Stats.Enabled)
             return;
-        if (ev.Attacker != null)
+        if (ev.Attacker == null || ev.Attacker.Id == ev.Player.Id)
+            return;
+
+        int dmg = (int)ev.Amount;
+        if (ev.Attacker.Role.Type == RoleTypeId.Scp173 && dmg < 0)
+            dmg = (int)ev.Player.MaxHealth;
+
+        string attackerId = ev.Attacker.UserId;
+        if (_roundStats.TryGetValue(attackerId, out var st))
         {
-            float damageDealed = ev.Amount;
-            int damageDealedInt = Convert.ToInt32(damageDealed);
-            int playerid = ev.Attacker.Id;
-            string playerIdSt = Convert.ToString(playerid);
-            if (ev.Attacker.Id != ev.Player.Id)
-            {
-                _playerStats[playerIdSt].DamageDealed = damageDealedInt + _playerStats[playerIdSt].DamageDealed;
-                _playerLifeStats[playerIdSt].DamageDealedLife =
-                    damageDealedInt + _playerLifeStats[playerIdSt].DamageDealedLife;
-            }
+            var rs = st.CurrentIsScp ? st.Scp : st.Human;
+            rs.Damage += dmg;
+            if (ev.Player.Role.Side == Side.Scp)
+                rs.DamageToScp += dmg;
         }
 
         
@@ -205,14 +199,15 @@ public class Plugin : Plugin<Config>
         if (!Config.Stats.Enabled)
             return;
 
-        string id = Convert.ToString(ev.Player.UserId);
+        string id = ev.Player.UserId;
         string nickname = ev.Player.Nickname;
-        int nonId = ev.Player.Id;
-        Log.Warn(id + nickname + nonId);
-        int playerId = ev.Player.Id;
-        string playerIdSt = Convert.ToString(playerId);
-        _playerStats[playerIdSt] = new PlayerStats { Kills = 0, DamageDealed = 0, FFkills = 0 };
-        _playerLifeStats[playerIdSt] = new PlayerLifeStats { KillsLife = 0, DamageDealedLife = 0 };
+        _roundStats[id] = new RoundPlayerStats();
+
+        if (Config.Database.Enabled)
+        {
+            _dbHelper.CreateRow(id, nickname);
+            _dbHelper.UpdateNickname(id, nickname);
+        }
     }
 
     private async void OnRoundStarted()
@@ -305,57 +300,26 @@ public class Plugin : Plugin<Config>
         }
         if (Config.AutoBomb.Enabled)
             Timing.KillCoroutines(_warheadCoroutine);
-        int MaxKills = 0;
-        string MaxKillsNickname = null;
-        string word = "убийств";
         foreach (var player in Exiled.API.Features.Player.List)
         {
-            int playerid = player.Id;
-            string playerIdSt = Convert.ToString(playerid);
-            if (Config.Stats.Enabled &&
-                _playerStats[playerIdSt].Kills - _playerStats[playerIdSt].FFkillsCount > MaxKills)
+            string id = player.UserId;
+            if (!_roundStats.TryGetValue(id, out var stats))
+                continue;
+
+            var current = stats.CurrentIsScp ? stats.Scp : stats.Human;
+            if (!stats.IsSpectator)
             {
-                MaxKills = _playerStats[playerIdSt].Kills - _playerStats[playerIdSt].FFkillsCount;
-                MaxKillsNickname = player.Nickname;
-            };
-        }
+                float now = (float)Round.ElapsedTime.TotalSeconds;
+                current.TimeAlive += TimeSpan.FromSeconds(now - stats.AliveStart);
+                current.TimePlayed += TimeSpan.FromSeconds(now - stats.ActiveStart);
+            }
 
-        if (MaxKills != 0)
-        {
-           word = CalculateRightWord(MaxKills);
-        }
-        else
-        {
-            MaxKillsNickname = "никто";
-        }
-        
-        foreach (var player in Exiled.API.Features.Player.List)
-        {
-            int playerid = player.Id;
-            string userId = player.UserId;
-            string playerIdSt = Convert.ToString(playerid);
-
-            if (Config.Stats.Enabled)
+            if (Config.Database.Enabled)
             {
-                int damageDealed = _playerStats[playerIdSt].DamageDealed;
-                int kills = _playerStats[playerIdSt].Kills;
-                int FFkillsCount = _playerStats[playerIdSt].FFkillsCount;
-                int takedSCPObjects = _playerStats[playerIdSt].takedSCPObjects;
-                int SCPsKilled = _playerStats[playerIdSt].SCPsKilled;
-
-                if (Config.Database.Enabled)
-                {
-                    Log.Warn(userId + kills + damageDealed);
-                    _dbHelper.UpdateStat(userId, kills, damageDealed, Round.ElapsedTime, FFkillsCount,
-                        takedSCPObjects, SCPsKilled);
-                }
-
-                string elapsedTime = Round.ElapsedTime.ToString("mm':'ss");
-                player.Broadcast(7,
-                    "Вы убили " + "<color=red>" + kills + "</color>" + " человек, из них союзников - " +
-                    "<color=red>" + FFkillsCount + "</color>" + ". Всего нанесено урона: " +
-                    "<color=red>" + damageDealed + "</color>\n" + "Самый результативный игрок - " + "<color=red>" +
-                    MaxKillsNickname + "</color>" + " с " + "<color=red>" + MaxKills + " </color>" + word);
+                if (stats.Human.TimePlayed > TimeSpan.Zero)
+                    _dbHelper.UpdateHumanStats(id, stats.Human);
+                if (stats.Scp.TimePlayed > TimeSpan.Zero)
+                    _dbHelper.UpdateScpStats(id, stats.Scp);
             }
         }
     }
@@ -378,23 +342,48 @@ public class Plugin : Plugin<Config>
     {
         await Task.Delay(TimeSpan.FromSeconds(15));
 
-        var dbStats = await _dbHelper.GetPlayerStatsAsync(id);
-        var killsRank = await _dbHelper.GetStatRankAsync(id, "kills");
-        var damageRank = await _dbHelper.GetStatRankAsync(id, "damageDealed");
-        var ffRank = await _dbHelper.GetStatRankAsync(id, "FFkills");
-        var scpKillsRank = await _dbHelper.GetStatRankAsync(id, "SCPsKilled");
-        var scpItemsRank = await _dbHelper.GetStatRankAsync(id, "takedSCPObjects");
+        if (player.Role.Side == Side.Scp)
+        {
+            var stats = await _dbHelper.GetScpStatsAsync(id);
+            var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", "scp_stats");
+            var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", "scp_stats");
+            var deathsRank = await _dbHelper.GetStatRankAsync(id, "deaths", "scp_stats");
 
-        string hint =
-            "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-            "<size=20>Kills: <color=red>"     + dbStats.Kills            + "</color>" + FormatRank(killsRank)      + "</size>\n" +
-            "<size=20>Damage: <color=red>"    + dbStats.DamageDealed     + "</color>" + FormatRank(damageRank)     + "</size>\n" +
-            "<size=20>FF kills: <color=red>"  + dbStats.FFkills          + "</color>" + FormatRank(ffRank)         + "</size>\n" +
-            "<size=20>SCP kills: <color=red>" + dbStats.ScpsKilled       + "</color>" + FormatRank(scpKillsRank)   + "</size>\n" +
-            "<size=20>SCP items: <color=red>" + dbStats.TakedSCPObjects  + "</color>" + FormatRank(scpItemsRank)   + "</size>\n" +
-            "<size=20>Playtime: <color=green>" + dbStats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
+            string hint =
+                "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(deathsRank) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
-        player.ShowHint(hint, 7f);
+            player.ShowHint(hint, 7f);
+        }
+        else
+        {
+            var stats = await _dbHelper.GetHumanStatsAsync(id);
+            var killsRank = await _dbHelper.GetStatRankAsync(id, "kills", "human_stats");
+            var dmgRank = await _dbHelper.GetStatRankAsync(id, "damage", "human_stats");
+            var ffRank = await _dbHelper.GetStatRankAsync(id, "ff_kills", "human_stats");
+
+            string hint =
+                "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color> / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color></size>\n" +
+                "<size=20>SCP kills: <color=red>" + stats.ScpsKilled + "</color> | Items: <color=red>" + stats.ScpItems + "</color></size>\n" +
+                "<size=20>Escapes: <color=red>" + stats.Escapes + "</color> | Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
+
+            player.ShowHint(hint, 7f);
+        }
+    }
+
+    private static string PerTen(int value, TimeSpan time)
+    {
+        if (time.TotalMinutes < 0.1)
+            return "0";
+        double val = value / (time.TotalMinutes / 10.0);
+        return Math.Round(val, 1).ToString();
     }
 
     private static string FormatRank(int? rank)
@@ -476,6 +465,18 @@ public class Plugin : Plugin<Config>
 
     private void PlayerSpawned(SpawnedEventArgs ev)
     {
+        if (Config.Stats.Enabled)
+        {
+            string id = ev.Player.UserId;
+            if (_roundStats.TryGetValue(id, out var st))
+            {
+                st.CurrentIsScp = ev.Player.Role.Side == Side.Scp;
+                st.IsSpectator = false;
+                float time = (float)Round.ElapsedTime.TotalSeconds;
+                st.ActiveStart = time;
+                st.AliveStart = time;
+            }
+        }
         if (ev.Player.IsScp)
         {
             _roundLogger.Write("Player List", "Round", ev.Player.Nickname + " respawned as " + ev.Player.Role.Type);
@@ -626,20 +627,29 @@ public class Plugin : Plugin<Config>
         }
     }
 
-    public class PlayerStats
-    {
-        public int Kills { get; set; }
-        public int FFkills { get; set; }
-        public int FFkillsCount { get; set; }
-        public int takedSCPObjects { get; set; }
-        public int SCPsKilled { get; set; }
-        public int DamageDealed { get; set; }
-    }
+public class RoleStats
+{
+    public int Damage;
+    public int DamageToScp;
+    public int Kills;
+    public int Deaths;
+    public int DeathsFromScp;
+    public int DeathsFromHuman;
+    public int ScpItems;
+    public int ScpsKilled;
+    public int FFKills;
+    public int Escapes;
+    public TimeSpan TimePlayed;
+    public TimeSpan TimeAlive;
+}
 
-    public class PlayerLifeStats
-    {
-        public int KillsLife { get; set; }
-
-        public int DamageDealedLife { get; set; }
-    }
+public class RoundPlayerStats
+{
+    public RoleStats Human = new();
+    public RoleStats Scp = new();
+    public bool CurrentIsScp;
+    public bool IsSpectator = true;
+    public float ActiveStart;
+    public float AliveStart;
+}
 }

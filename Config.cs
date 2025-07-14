@@ -98,6 +98,14 @@ namespace MaxunPlugin
         
     public class StatsModule : ModuleBase
     {
+        [Description("Broadcast template when a player kills too many allies. {killer} - attacker, {victim} - victim, {count} - kill count")]
+        public string TeamkillMessage { get; set; } = "<color=blue>{killer}</color> <color=white>killed {victim}. Teamkills: <color=red>{count}</color>";
+
+        [Description("Enable broadcast on excessive teamkills.")]
+        public bool TeamkillBroadcast { get; set; } = true;
+
+        [Description("Teamkill threshold for broadcast.")]
+        public int TeamkillLimit { get; set; } = 3;
     }
 
     public class AutoBombModule : ModuleBase
