@@ -215,7 +215,6 @@ public class Plugin : Plugin<Config>
                 float now = (float)Round.ElapsedTime.TotalSeconds;
                 roleStats.TimeAlive += TimeSpan.FromSeconds(now - stats.AliveStart);
                 roleStats.TimePlayed += TimeSpan.FromSeconds(now - stats.ActiveStart);
-                stats.IsSpectator = true;
             }
         }
     }
