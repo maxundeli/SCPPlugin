@@ -441,9 +441,9 @@ public class Plugin : Plugin<Config>
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color>" + FormatRank(kills10Rank) + " (10m)</size>\n" +
-                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color>" + FormatRank(dmg10Rank) + " (10m)</size>\n" +
-                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(deathsRank) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color>" + FormatRank(deaths10Rank) + " (10m)</size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color>" + FormatRank(kills10Rank) + " (avg for 10m)</size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color>" + FormatRank(dmg10Rank) + " (avg for 10m)</size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(deathsRank) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color>" + FormatRank(deaths10Rank) + " (avg for 10m)</size>\n" +
                 "<size=20>Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
             player.ShowHint(hint, 7f);
@@ -464,16 +464,16 @@ public class Plugin : Plugin<Config>
 
             string hint =
                 "<size=22><b><color=#ffb84d>Statistics</color></b></size>\n" +
-                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color>" + FormatRank(kills10Rank) + " (10m)</size>\n" +
-                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color>" + FormatRank(dmg10Rank) + " (10m)</size>\n" +
-                "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color>" + FormatRank(ff10Rank) + " (10m)</size>\n" +
-                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(null) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color>" + FormatRank(deaths10Rank) + " (10m)</size>\n" +
+                "<size=20>Kills: <color=red>" + stats.Kills + "</color>" + FormatRank(killsRank) + " / <color=red>" + PerTen(stats.Kills, stats.TimePlayed) + "</color>" + FormatRank(kills10Rank) + " (avg for 10m)</size>\n" +
+                "<size=20>Damage: <color=red>" + stats.Damage + "</color>" + FormatRank(dmgRank) + " / <color=red>" + PerTen(stats.Damage, stats.TimePlayed) + "</color>" + FormatRank(dmg10Rank) + " (avg for 10m)</size>\n" +
+                "<size=20>Teamkills: <color=red>" + stats.FFKills + "</color>" + FormatRank(ffRank) + " / <color=red>" + PerTen(stats.FFKills, stats.TimePlayed) + "</color>" + FormatRank(ff10Rank) + " (avg for 10m)</size>\n" +
+                "<size=20>Deaths: <color=red>" + stats.Deaths + "</color>" + FormatRank(null) + " / <color=red>" + PerTen(stats.Deaths, stats.TimePlayed) + "</color>" + FormatRank(deaths10Rank) + " (avg for 10m)</size>\n" +
                 "<size=20>SCP kills: <color=red>" + stats.ScpsKilled + "</color>" + FormatRank(scpsKilledRank) +
                 " | Items: <color=red>" + stats.ScpItems + "</color>" + FormatRank(scpItemsRank) + "</size>\n" +
                 "<size=20>Escapes: <color=red>" + stats.Escapes + "</color>" + FormatRank(escapesRank) +
                 " | Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
-            player.ShowHint(hint, 7f);
+            player.ShowHint(hint, 11f);
         }
     }
 
