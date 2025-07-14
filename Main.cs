@@ -397,7 +397,7 @@ public class Plugin : Plugin<Config>
                 "<size=20>SCP kills: <color=red>" + stats.ScpsKilled + "</color> | Items: <color=red>" + stats.ScpItems + "</color></size>\n" +
                 "<size=20>Escapes: <color=red>" + stats.Escapes + "</color> | Playtime: <color=green>" + stats.TimePlayed.ToString("hh':'mm':'ss") + "</color></size>";
 
-            player.ShowHint(hint, 7f);
+            player.ShowHint(hint, 10f);
         }
     }
 
