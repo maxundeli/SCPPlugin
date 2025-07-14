@@ -309,6 +309,31 @@ public class Plugin : Plugin<Config>
         }
         if (Config.AutoBomb.Enabled)
             Timing.KillCoroutines(_warheadCoroutine);
+        int maxKills = 0;
+        string maxKiller = string.Empty;
+
+        foreach (var pl in Exiled.API.Features.Player.List)
+        {
+            string pid = pl.UserId;
+            if (!_roundStats.TryGetValue(pid, out var pStats))
+                continue;
+
+            int kills = pStats.Human.Kills + pStats.Scp.Kills;
+            int ff = pStats.Human.FFKills;
+
+            if (Config.Stats.Enabled && kills - ff > maxKills)
+            {
+                maxKills = kills - ff;
+                maxKiller = pl.Nickname;
+            }
+        }
+
+        string word = "убийств";
+        if (maxKills != 0)
+            word = CalculateRightWord(maxKills);
+        else
+            maxKiller = "никто";
+
         foreach (var player in Exiled.API.Features.Player.List)
         {
             string id = player.UserId;
@@ -335,6 +360,19 @@ public class Plugin : Plugin<Config>
                     Log.Info($"Updating SCP stats for {id}");
                     await _dbHelper.UpdateScpStats(id, new ScpDbStats(stats.Scp));
                 }
+            }
+
+            if (Config.Stats.Enabled)
+            {
+                int dmg = (int)Math.Round(stats.Human.Damage + stats.Scp.Damage);
+                int kills = stats.Human.Kills + stats.Scp.Kills;
+                int ff = stats.Human.FFKills;
+
+                player.Broadcast(7,
+                    "Вы убили " + "<color=red>" + kills + "</color>" + " человек, из них союзников - " +
+                    "<color=red>" + ff + "</color>" + ". Всего нанесено урона: " +
+                    "<color=red>" + dmg + "</color>\n" + "Самый результативный игрок - " + "<color=red>" +
+                    maxKiller + "</color>" + " с " + "<color=red>" + maxKills + " </color>" + word);
             }
         }
     }
