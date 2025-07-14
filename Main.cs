@@ -154,7 +154,20 @@ public class Plugin : Plugin<Config>
                 if (ev.Attacker != ev.Player)
                     att.Kills++;
 
-                bool allyKill = ev.Attacker.Role.Team == ev.Player.Role.Team && ev.Attacker.Role.Side != Side.Scp;
+                bool allyKill =
+                    (ev.Attacker.Role.Side == Side.ChaosInsurgency &&
+                     (ev.Player.PreviousRole == RoleTypeId.ChaosConscript ||
+                      ev.Player.PreviousRole == RoleTypeId.ChaosMarauder ||
+                      ev.Player.PreviousRole == RoleTypeId.ChaosRepressor ||
+                      ev.Player.PreviousRole == RoleTypeId.ChaosRifleman ||
+                      ev.Player.PreviousRole == RoleTypeId.ClassD)) ||
+                    (ev.Attacker.Role.Side == Side.Mtf &&
+                     (ev.Player.PreviousRole == RoleTypeId.NtfCaptain ||
+                      ev.Player.PreviousRole == RoleTypeId.NtfPrivate ||
+                      ev.Player.PreviousRole == RoleTypeId.NtfSergeant ||
+                      ev.Player.PreviousRole == RoleTypeId.NtfSpecialist ||
+                      ev.Player.PreviousRole == RoleTypeId.Scientist ||
+                      ev.Player.PreviousRole == RoleTypeId.FacilityGuard));
 
                 if (!aStats.CurrentIsScp)
                 {
