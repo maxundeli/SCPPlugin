@@ -276,7 +276,7 @@ public class Plugin : Plugin<Config>
                     int chanceTo3114 = Random.Range(1, 101);
                     if ((chanceTo3114 <= Config.Scp3114Chance))
                     {
-                        player.RoleManager.ServerSetRole(RoleTypeId.Scp3114, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.All);
+                        player.Role.Set(RoleTypeId.Scp3114, SpawnReason.None);
                         isScp3114Spawned = true;
                         _roundLogger.Write("Player List", "Round", nickname + " respawned as " + player.Role.Type);
                     }
