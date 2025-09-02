@@ -20,6 +20,7 @@ namespace MaxunPlugin
     public class RoundLogger
     {
         private StreamWriter? _writer;
+        private string? _currentLogFile;
         private readonly string _logDir;
 
         private readonly Dictionary<int, DateTimeOffset> _teslaCooldown = new();
@@ -29,6 +30,9 @@ namespace MaxunPlugin
 
         private readonly object _damageLock = new();
         private readonly Dictionary<string, DamageAggregate> _damageBuffer = new();
+
+        private string? _lastRaLogFile;
+        private int _lastRaLogLine;
 
         private class DamageAggregate
         {
@@ -84,7 +88,6 @@ namespace MaxunPlugin
 
             Warhead.Detonated += OnWarheadDetonated;
             Warhead.Starting += OnWarheadStarting;
-            Warhead.Stopping += OnWarheadStopping;
             Warhead.DeadmanSwitchInitiating += OnDeadmanSwitch;
             Warhead.Detonating += OnWarheadDetonating;
             Warhead.ChangingLeverStatus += OnChangingLever;
@@ -129,7 +132,6 @@ namespace MaxunPlugin
 
             Warhead.Detonated -= OnWarheadDetonated;
             Warhead.Starting -= OnWarheadStarting;
-            Warhead.Stopping -= OnWarheadStopping;
             Warhead.DeadmanSwitchInitiating -= OnDeadmanSwitch;
             Warhead.Detonating -= OnWarheadDetonating;
             Warhead.ChangingLeverStatus -= OnChangingLever;
@@ -143,9 +145,9 @@ namespace MaxunPlugin
         private void StartFile()
         {
             string name = DateTimeOffset.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".txt";
-            string path = Path.Combine(_logDir, name);
-            _writer = new StreamWriter(path, true);
-            Log.Info("Round log file created at " + path);
+            _currentLogFile = Path.Combine(_logDir, name);
+            _writer = new StreamWriter(new FileStream(_currentLogFile, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
+            Log.Info("Round log file created at " + _currentLogFile);
         }
 
         private void CloseFile()
@@ -153,6 +155,71 @@ namespace MaxunPlugin
             _writer?.Flush();
             _writer?.Dispose();
             _writer = null;
+            _currentLogFile = null;
+        }
+
+        private void AppendRemoteAdminLogs()
+        {
+            try
+            {
+                if (_writer == null || _currentLogFile == null)
+                    return;
+
+                string logsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "SCP Secret Laboratory", "ServerLogs", Exiled.API.Features.Server.Port.ToString());
+                if (!Directory.Exists(logsDir))
+                    return;
+
+                var file = Directory.GetFiles(logsDir)
+                    .OrderByDescending(File.GetLastWriteTime)
+                    .FirstOrDefault();
+                if (file == null)
+                    return;
+
+                if (_lastRaLogFile != file)
+                {
+                    _lastRaLogFile = file;
+                    _lastRaLogLine = 0;
+                }
+
+                var lines = File.ReadAllLines(file);
+                var raLines = new List<string>();
+                for (int i = _lastRaLogLine; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+                    if (line.Contains("Remote Admin"))
+                        raLines.Add(line);
+                }
+
+                _lastRaLogLine = lines.Length;
+
+                if (raLines.Count == 0)
+                    return;
+
+                _writer.Flush();
+                _writer.Dispose();
+                _writer = null;
+
+                var output = File.ReadAllLines(_currentLogFile).ToList();
+                output.AddRange(raLines);
+
+                DateTimeOffset ParseTs(string l)
+                {
+                    int idx = l.IndexOf('|');
+                    return DateTimeOffset.TryParse(idx > 0 ? l.Substring(0, idx).Trim() : string.Empty, out var ts)
+                        ? ts
+                        : DateTimeOffset.MaxValue;
+                }
+
+                output.Sort((a, b) => ParseTs(a).CompareTo(ParseTs(b)));
+                File.WriteAllLines(_currentLogFile, output);
+
+                _writer = new StreamWriter(new FileStream(_currentLogFile, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to append remote admin logs: " + ex);
+            }
         }
 
         public void Write(string category, string sub, string message)
@@ -215,6 +282,7 @@ namespace MaxunPlugin
         {
             FlushAllDamage();
             Write("Game Event", "Round", "Round ended. Leading team: " + ev.LeadingTeam);
+            AppendRemoteAdminLogs();
         }
         private void OnRoundRestart()
         {
@@ -222,6 +290,7 @@ namespace MaxunPlugin
             _deadmanLogged = false;
             _teslaCooldown.Clear();
             Write("Game Event", "Round", "Round restarting");
+            AppendRemoteAdminLogs();
             CloseFile();
         }
         private void OnTeamRespawned(RespawnedTeamEventArgs ev)
@@ -319,10 +388,6 @@ namespace MaxunPlugin
         private void OnWarheadStarting(StartingEventArgs ev)
         {
             Write("Game Event", "Warhead", "Warhead starting");
-        }
-        private void OnWarheadStopping(StoppingEventArgs ev)
-        {
-            Write("Game Event", "Warhead", "Warhead stopping");
         }
         private void OnDeadmanSwitch(DeadmanSwitchInitiatingEventArgs ev)
         {
