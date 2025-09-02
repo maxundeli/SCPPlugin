@@ -88,6 +88,7 @@ namespace MaxunPlugin
 
             Warhead.Detonated += OnWarheadDetonated;
             Warhead.Starting += OnWarheadStarting;
+            Warhead.Stopping += OnWarheadStopping;
             Warhead.DeadmanSwitchInitiating += OnDeadmanSwitch;
             Warhead.Detonating += OnWarheadDetonating;
             Warhead.ChangingLeverStatus += OnChangingLever;
@@ -132,6 +133,7 @@ namespace MaxunPlugin
 
             Warhead.Detonated -= OnWarheadDetonated;
             Warhead.Starting -= OnWarheadStarting;
+            Warhead.Stopping -= OnWarheadStopping;
             Warhead.DeadmanSwitchInitiating -= OnDeadmanSwitch;
             Warhead.Detonating -= OnWarheadDetonating;
             Warhead.ChangingLeverStatus -= OnChangingLever;
@@ -388,6 +390,10 @@ namespace MaxunPlugin
         private void OnWarheadStarting(StartingEventArgs ev)
         {
             Write("Game Event", "Warhead", "Warhead starting");
+        }
+        private void OnWarheadStopping(StoppingEventArgs ev)
+        {
+            Write("Game Event", "Warhead", "Warhead stopping");
         }
         private void OnDeadmanSwitch(DeadmanSwitchInitiatingEventArgs ev)
         {
