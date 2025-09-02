@@ -113,7 +113,7 @@ public class Plugin : Plugin<Config>
     {
         if (ev.Pickup.Category == ItemCategory.SCPItem)
         {
-            string id = ev.Player.Id.ToString();
+            string id = ev.Player.UserId;
             if (_roundStats.TryGetValue(id, out var stats))
                 stats.Human.ScpItems++;
         }
